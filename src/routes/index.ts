@@ -1,3 +1,2 @@
-/** Placeholder for Phase 2+ route configuration */
-
-export {};
+export { router } from '@/routes/router';
+export { ROUTES } from '@/routes/routePaths';

@@ -341,24 +341,24 @@ Route prefixes group by role after login. Exact router library is an implementat
 | `/admin/audit` | Audit |
 | `/admin/settings` | Settings (placeholder until confirmed) |
 
-### Receptionist (`/reception`)
+### Receptionist (`/receptionist`)
 
 | Route | Page |
 |-------|------|
-| `/reception` or `/reception/dashboard` | Reception dashboard |
-| `/reception/clients` | Clients |
-| `/reception/clients/new` | Create client with vehicle |
-| `/reception/clients/:personId` | Client detail |
-| `/reception/vehicles` | Vehicles |
-| `/reception/service-orders/new` | New service order |
-| `/reception/service-orders` | Active service orders |
-| `/reception/service-orders/:id` | Service order detail |
-| `/reception/service-orders/:id/assign-mechanic` | Assign mechanic (or section in detail) |
-| `/reception/inventory` | Inventory |
-| `/reception/purchases` | Spare parts purchases |
-| `/reception/invoices` | Invoicing |
-| `/reception/payments/record` | Record payment (or modal from invoice) |
-| `/reception/search` | Global search |
+| `/receptionist` or `/receptionist/dashboard` | Reception dashboard |
+| `/receptionist/clients` | Clients |
+| `/receptionist/clients/new` | Create client with vehicle |
+| `/receptionist/clients/:personId` | Client detail |
+| `/receptionist/vehicles` | Vehicles |
+| `/receptionist/service-orders/new` | New service order |
+| `/receptionist/service-orders` | Active service orders |
+| `/receptionist/service-orders/:id` | Service order detail |
+| `/receptionist/service-orders/:id/assign-mechanic` | Assign mechanic (or section in detail) |
+| `/receptionist/inventory` | Inventory |
+| `/receptionist/purchases` | Spare parts purchases |
+| `/receptionist/invoices` | Invoicing |
+| `/receptionist/payments/record` | Record payment (or modal from invoice) |
+| `/receptionist/search` | Global search |
 
 ### Mechanic (`/mechanic`)
 
@@ -392,7 +392,7 @@ Route prefixes group by role after login. Exact router library is an implementat
 | Role | Default route |
 |------|---------------|
 | Admin | `/admin/dashboard` |
-| Receptionist | `/reception/dashboard` |
+| Receptionist | `/receptionist/dashboard` |
 | Mechanic | `/mechanic/dashboard` |
 | Client | `/client/dashboard` |
 

@@ -54,7 +54,7 @@ AutoTallerManager-Frontend/
 │   ├── features/               # Feature folders (optional grouping)
 │   │   ├── auth/
 │   │   ├── admin/
-│   │   ├── reception/
+│   │   ├── receptionist/
 │   │   ├── mechanic/
 │   │   └── client/
 │   ├── components/
@@ -78,7 +78,7 @@ AutoTallerManager-Frontend/
 
 1. **Public routes:** `/login`, `/register` — no layout shell.
 2. **Protected wrapper:** Requires valid access token; loads `GET /api/account/me` optional for profile sync.
-3. **Role prefixes:** `/admin/*`, `/reception/*`, `/mechanic/*`, `/client/*` per `frontend-requirements.md`.
+3. **Role prefixes:** `/admin/*`, `/receptionist/*`, `/mechanic/*`, `/client/*` per `frontend-requirements.md`.
 4. **Shared account:** `/account/profile`, `/account/change-password` inside protected wrapper.
 5. **Default redirect:** After login, map primary role to dashboard route.
 6. **403 route:** `/unauthorized` for wrong role.
@@ -316,10 +316,10 @@ Deliver AppShell (sidebar, topbar), role navigation, and dashboard pages wired t
 
 ```
 src/components/layout/AppShell.tsx, Sidebar.tsx, TopBar.tsx, MetricCard.tsx
-src/config/navigation/admin.nav.ts, reception.nav.ts, mechanic.nav.ts, client.nav.ts
+src/config/navigation/admin.nav.ts, receptionist.nav.ts, mechanic.nav.ts, client.nav.ts
 src/api/dashboards.api.ts
 src/pages/admin/AdminDashboardPage.tsx
-src/pages/reception/ReceptionDashboardPage.tsx
+src/pages/receptionist/ReceptionDashboardPage.tsx
 src/pages/mechanic/MechanicDashboardPage.tsx
 src/pages/client/ClientDashboardPage.tsx
 src/pages/shared/PendingConfirmationPage.tsx
@@ -422,7 +422,7 @@ Implement reception operational pages: clients, intake, active orders, assign me
 
 ### Scope
 
-- `/reception/*` routes and navigation
+- `/receptionist/*` routes and navigation
 - Workshop intake form (`CreateWorkshopIntakeRequest`)
 - Create client with vehicle flow
 - Order detail operations (no void)
@@ -431,9 +431,9 @@ Implement reception operational pages: clients, intake, active orders, assign me
 ### Files/folders likely to be created
 
 ```
-src/features/reception/**
+src/features/receptionist/**
 src/api/workshopIntake.api.ts, receptionist.api.ts, search.api.ts
-src/pages/reception/*
+src/pages/receptionist/*
 src/components/domain/WorkshopIntakeForm.tsx, ClientWithVehicleForm.tsx
 ```
 

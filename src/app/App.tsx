@@ -1,5 +1,11 @@
-import { DesignPreview } from '@/app/DesignPreview';
+import { RouterProvider } from 'react-router-dom';
+import { AuthProvider } from '@/features/auth/context/AuthProvider';
+import { router } from '@/routes/router';
 
 export function App() {
-  return <DesignPreview />;
+  return (
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
+  );
 }

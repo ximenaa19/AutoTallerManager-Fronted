@@ -1,7 +1,19 @@
 import { ApiError, NetworkError, parseApiErrorResponse } from '@/api/apiError';
+import { refreshAccessToken } from '@/api/authRefresh';
 import { getAccessToken } from '@/lib/authToken';
 import { getApiBaseUrl } from '@/lib/env';
 import type { HttpResponse, RequestOptions } from '@/types/api.types';
+
+type InternalRequestOptions = RequestOptions & {
+  _retried?: boolean;
+  _skipRefresh?: boolean;
+};
+
+let unauthorizedHandler: (() => void) | null = null;
+
+export function setUnauthorizedHandler(handler: (() => void) | null): void {
+  unauthorizedHandler = handler;
+}
 
 function buildUrl(path: string, params?: RequestOptions['params']): string {
   const base = getApiBaseUrl().replace(/\/$/, '');
@@ -54,9 +66,17 @@ async function parseResponseBody<T>(response: Response): Promise<T | null> {
 
 async function request<T>(
   path: string,
-  options: RequestOptions = {},
+  options: InternalRequestOptions = {},
 ): Promise<HttpResponse<T>> {
-  const { method = 'GET', body, params, skipAuth, ...init } = options;
+  const {
+    method = 'GET',
+    body,
+    params,
+    skipAuth,
+    _retried = false,
+    _skipRefresh = false,
+    ...init
+  } = options;
   const hasBody = body !== undefined;
   const url = buildUrl(path, params);
 
@@ -71,6 +91,22 @@ async function request<T>(
     });
   } catch {
     throw new NetworkError();
+  }
+
+  if (
+    response.status === 401 &&
+    !skipAuth &&
+    !_retried &&
+    !_skipRefresh &&
+    !path.includes('/api/auth/refresh')
+  ) {
+    try {
+      await refreshAccessToken();
+      return request<T>(path, { ...options, _retried: true });
+    } catch {
+      unauthorizedHandler?.();
+      throw await parseApiErrorResponse(response);
+    }
   }
 
   if (!response.ok) {
