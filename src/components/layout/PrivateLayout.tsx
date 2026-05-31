@@ -1,59 +1,53 @@
-import { LogOut } from 'lucide-react';
-import { Outlet } from 'react-router-dom';
+import { useState } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
 import {
   AppShell,
-  AppShellBrand,
   AppShellContent,
 } from '@/components/layout/AppShell';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
+import { Sidebar } from '@/components/layout/Sidebar';
+import { Topbar } from '@/components/layout/Topbar';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { getRoleLabel } from '@/lib/roles';
+import { getNavigationForRole, getPageTitle } from '@/routes/navigation';
+import { ACCOUNT_ROUTE_LABELS } from '@/routes/routePaths';
+import type { AppRole } from '@/types/auth.types';
+
+function resolvePageTitle(pathname: string, activeRole: AppRole | null): string {
+  if (ACCOUNT_ROUTE_LABELS[pathname]) {
+    return ACCOUNT_ROUTE_LABELS[pathname];
+  }
+
+  return getPageTitle(pathname, activeRole);
+}
 
 export function PrivateLayout() {
-  const { user, activeRole, logout } = useAuth();
+  const { activeRole } = useAuth();
+  const location = useLocation();
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const navItems = getNavigationForRole(activeRole);
+  const roleLabel = activeRole ? getRoleLabel(activeRole) : undefined;
+  const pageTitle = resolvePageTitle(location.pathname, activeRole);
 
   return (
     <AppShell
+      mobileSidebarOpen={mobileSidebarOpen}
+      onMobileSidebarClose={() => setMobileSidebarOpen(false)}
       sidebar={
-        <div>
-          <AppShellBrand />
-          <div className="border-t border-border px-5 py-4">
-            <p className="text-xs leading-relaxed text-text-muted">
-              Full navigation will be available in Phase 3.
-            </p>
-          </div>
-        </div>
+        <Sidebar
+          items={navItems}
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed((value) => !value)}
+          onNavigate={() => setMobileSidebarOpen(false)}
+        />
       }
       topbar={
-        <div className="flex h-14 items-center justify-between gap-4 px-4 sm:px-6">
-          <p className="truncate text-sm font-medium text-text-secondary">
-            AutoTaller Manager
-          </p>
-          <div className="flex items-center gap-3">
-            {activeRole && (
-              <Badge variant="accent">{getRoleLabel(activeRole)}</Badge>
-            )}
-            <div className="hidden text-right sm:block">
-              <p className="text-sm font-medium text-text-primary">
-                {user?.email}
-              </p>
-              {activeRole && (
-                <p className="text-xs text-text-secondary">
-                  {getRoleLabel(activeRole)}
-                </p>
-              )}
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => void logout()}
-              leftIcon={<LogOut className="size-4" />}
-            >
-              <span className="hidden sm:inline">Sign out</span>
-            </Button>
-          </div>
-        </div>
+        <Topbar
+          pageTitle={pageTitle}
+          roleLabel={roleLabel}
+          onMenuClick={() => setMobileSidebarOpen(true)}
+        />
       }
     >
       <AppShellContent>

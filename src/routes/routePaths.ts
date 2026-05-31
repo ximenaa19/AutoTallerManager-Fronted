@@ -6,18 +6,60 @@ export const ROUTES = {
 
   ADMIN: '/admin',
   ADMIN_DASHBOARD: '/admin/dashboard',
+  ADMIN_USERS: '/admin/users',
+  ADMIN_STAFF: '/admin/staff',
+  ADMIN_ROLES: '/admin/roles',
+  ADMIN_CATALOGS: '/admin/catalogs',
+  ADMIN_CLIENTS: '/admin/clients',
+  ADMIN_VEHICLES: '/admin/vehicles',
+  ADMIN_SERVICE_ORDERS: '/admin/service-orders',
+  ADMIN_MECHANICS: '/admin/mechanics',
+  ADMIN_INVENTORY: '/admin/inventory',
+  ADMIN_PURCHASES: '/admin/purchases',
+  ADMIN_INVOICES: '/admin/invoices',
+  ADMIN_PAYMENTS: '/admin/payments',
+  ADMIN_REPORTS: '/admin/reports',
+  ADMIN_AUDIT: '/admin/audit',
+  ADMIN_SETTINGS: '/admin/settings',
 
   RECEPTIONIST: '/receptionist',
   RECEPTIONIST_DASHBOARD: '/receptionist/dashboard',
+  RECEPTIONIST_CLIENTS: '/receptionist/clients',
+  RECEPTIONIST_CLIENTS_NEW: '/receptionist/clients/new',
+  RECEPTIONIST_VEHICLES: '/receptionist/vehicles',
+  RECEPTIONIST_SERVICE_ORDERS_NEW: '/receptionist/service-orders/new',
+  RECEPTIONIST_SERVICE_ORDERS: '/receptionist/service-orders',
+  RECEPTIONIST_ASSIGN_MECHANIC: '/receptionist/service-orders/assign-mechanic',
+  RECEPTIONIST_INVENTORY: '/receptionist/inventory',
+  RECEPTIONIST_PURCHASES: '/receptionist/purchases',
+  RECEPTIONIST_INVOICES: '/receptionist/invoices',
+  RECEPTIONIST_PAYMENTS: '/receptionist/payments/record',
+  RECEPTIONIST_SEARCH: '/receptionist/search',
 
   MECHANIC: '/mechanic',
   MECHANIC_DASHBOARD: '/mechanic/dashboard',
+  MECHANIC_ASSIGNED_SERVICES: '/mechanic/assigned-services',
+  MECHANIC_ACTIVE_ORDERS: '/mechanic/active-orders',
+  MECHANIC_SERVICE_DETAIL: '/mechanic/service-detail',
+  MECHANIC_RECORD_WORK: '/mechanic/record-work',
+  MECHANIC_REQUEST_PARTS: '/mechanic/parts/request',
+  MECHANIC_SEARCH_PARTS: '/mechanic/parts/search',
+  MECHANIC_HISTORY: '/mechanic/history',
 
   CLIENT: '/client',
   CLIENT_DASHBOARD: '/client/dashboard',
+  CLIENT_VEHICLES: '/client/vehicles',
+  CLIENT_SERVICE_ORDERS: '/client/service-orders',
+  CLIENT_APPROVALS: '/client/approvals',
+  CLIENT_INVOICES: '/client/invoices',
 
   ACCOUNT_PROFILE: '/account/profile',
   ACCOUNT_CHANGE_PASSWORD: '/account/change-password',
 } as const;
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];
+
+export const ACCOUNT_ROUTE_LABELS: Record<string, string> = {
+  [ROUTES.ACCOUNT_PROFILE]: 'My Profile',
+  [ROUTES.ACCOUNT_CHANGE_PASSWORD]: 'Change Password',
+};
