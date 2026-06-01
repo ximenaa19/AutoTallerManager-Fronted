@@ -497,4 +497,52 @@
 
 ---
 
+# Phase 4.3 — Admin Customers and Vehicles (2026-05-31)
+
+## POST /api/clients/{personId}/vehicles request body
+
+**Status:** Deferred — read-only add-vehicle UI disabled
+
+**Related page/feature:** Admin → Customers detail → Add vehicle
+
+**Problem:** `api-contract.md` §9 lists the route and auth but does not document the JSON request body for adding a vehicle to an existing client.
+
+**Frontend handling:** Customer detail shows linked vehicles via GET `/api/clients/{personId}/vehicles` only. Add-vehicle action is not exposed until `Create*` request fields are added to §10.
+
+---
+
+## Vehicle create/update request bodies (POST/PUT /api/vehicles)
+
+**Status:** Deferred — create/edit disabled on Admin Vehicles
+
+**Related page/feature:** Admin → Vehicles list/detail
+
+**Problem:** §9 names `CreateVehicleRequest` / `UpdateVehicleRequest` but §10 does not document JSON field lists (unlike POST `/api/persons`).
+
+**Frontend handling:** List, detail, delete, and transfer ownership are implemented. “New vehicle” and edit forms remain disabled with deferred messaging. `VehicleDto` display fields are typed from §7 domain model + §10 search/client DTOs; validate `createdAt` against live API during QA.
+
+---
+
+## VehicleOwnerHistoryDto and VehicleEntryInventoryDto
+
+**Status:** Deferred — panels not wired
+
+**Related page/feature:** Admin → Vehicle detail → Owner history / Entry inventory
+
+**Problem:** GET list routes exist in §9, but §10 does not document response field names or how to filter rows by `vehicleId`.
+
+**Frontend handling:** Vehicle detail page shows deferred placeholders. Do not call these endpoints for display until DTO tables are added to `api-contract.md` §10.
+
+---
+
+## Admin customers route path vs “customers” label
+
+**Status:** Resolved for frontend implementation
+
+**Related page/feature:** Sidebar “Customers” nav item
+
+**Resolution:** Product route remains `/admin/clients` per `frontend-requirements.md`. UI copy uses “Customers”; no `/admin/customers` route added.
+
+---
+
 *Last reviewed against backend: 2026-05-29. Update this file when backend or deployment config changes.*

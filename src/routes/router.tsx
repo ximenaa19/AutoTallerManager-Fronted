@@ -16,6 +16,10 @@ import { StaffPage } from '@/features/admin/pages/StaffPage';
 import { RolesPage } from '@/features/admin/pages/RolesPage';
 import { CatalogsHomePage } from '@/features/admin/catalogs/pages/CatalogsHomePage';
 import { CatalogDetailPage } from '@/features/admin/catalogs/pages/CatalogDetailPage';
+import { CustomersPage } from '@/features/admin/customers/pages/CustomersPage';
+import { CustomerDetailPage } from '@/features/admin/customers/pages/CustomerDetailPage';
+import { VehiclesPage } from '@/features/admin/vehicles/pages/VehiclesPage';
+import { VehicleDetailPage } from '@/features/admin/vehicles/pages/VehicleDetailPage';
 import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { PublicOnlyRoute } from '@/routes/PublicOnlyRoute';
 import { RoleGuard } from '@/routes/RoleGuard';
@@ -55,8 +59,10 @@ export const router = createBrowserRouter([
               { path: ROUTES.ADMIN_ROLES, element: <RolesPage /> },
               { path: ROUTES.ADMIN_CATALOGS, element: <CatalogsHomePage /> },
               { path: ROUTES.ADMIN_CATALOG_DETAIL, element: <CatalogDetailPage /> },
-              { path: ROUTES.ADMIN_CLIENTS, element: comingSoon },
-              { path: ROUTES.ADMIN_VEHICLES, element: comingSoon },
+              { path: ROUTES.ADMIN_CLIENTS, element: <CustomersPage /> },
+              { path: ROUTES.ADMIN_CLIENT_DETAIL, element: <CustomerDetailPage /> },
+              { path: ROUTES.ADMIN_VEHICLES, element: <VehiclesPage /> },
+              { path: ROUTES.ADMIN_VEHICLE_DETAIL, element: <VehicleDetailPage /> },
               { path: ROUTES.ADMIN_SERVICE_ORDERS, element: comingSoon },
               { path: ROUTES.ADMIN_MECHANICS, element: comingSoon },
               { path: ROUTES.ADMIN_INVENTORY, element: comingSoon },

@@ -12,7 +12,9 @@ export const ROUTES = {
   ADMIN_CATALOGS: '/admin/catalogs',
   ADMIN_CATALOG_DETAIL: '/admin/catalogs/:catalogKey',
   ADMIN_CLIENTS: '/admin/clients',
+  ADMIN_CLIENT_DETAIL: '/admin/clients/:personId',
   ADMIN_VEHICLES: '/admin/vehicles',
+  ADMIN_VEHICLE_DETAIL: '/admin/vehicles/:vehicleId',
   ADMIN_SERVICE_ORDERS: '/admin/service-orders',
   ADMIN_MECHANICS: '/admin/mechanics',
   ADMIN_INVENTORY: '/admin/inventory',
@@ -62,6 +64,14 @@ export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];
 
 export function adminCatalogDetailPath(catalogKey: string): string {
   return `/admin/catalogs/${catalogKey}`;
+}
+
+export function adminClientDetailPath(personId: number): string {
+  return `/admin/clients/${personId}`;
+}
+
+export function adminVehicleDetailPath(vehicleId: number): string {
+  return `/admin/vehicles/${vehicleId}`;
 }
 
 export const ACCOUNT_ROUTE_LABELS: Record<string, string> = {
