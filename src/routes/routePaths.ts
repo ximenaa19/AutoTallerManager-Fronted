@@ -16,6 +16,7 @@ export const ROUTES = {
   ADMIN_VEHICLES: '/admin/vehicles',
   ADMIN_VEHICLE_DETAIL: '/admin/vehicles/:vehicleId',
   ADMIN_SERVICE_ORDERS: '/admin/service-orders',
+  ADMIN_SERVICE_ORDER_DETAIL: '/admin/service-orders/:serviceOrderId',
   ADMIN_MECHANICS: '/admin/mechanics',
   ADMIN_INVENTORY: '/admin/inventory',
   ADMIN_PURCHASES: '/admin/purchases',
@@ -72,6 +73,10 @@ export function adminClientDetailPath(personId: number): string {
 
 export function adminVehicleDetailPath(vehicleId: number): string {
   return `/admin/vehicles/${vehicleId}`;
+}
+
+export function adminServiceOrderDetailPath(serviceOrderId: number): string {
+  return `/admin/service-orders/${serviceOrderId}`;
 }
 
 export const ACCOUNT_ROUTE_LABELS: Record<string, string> = {

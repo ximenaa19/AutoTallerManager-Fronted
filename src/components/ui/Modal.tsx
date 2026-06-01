@@ -70,11 +70,11 @@ export function Modal({
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
         className={cn(
-          'relative z-10 flex w-full flex-col rounded-lg border border-border bg-bg-surface shadow-xl',
+          'relative z-10 flex max-h-[min(90vh,90dvh)] w-full min-h-0 flex-col overflow-hidden rounded-lg border border-border bg-bg-surface shadow-xl',
           sizeStyles[size],
         )}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-5 py-4">
           <div className="flex flex-col gap-1">
             <h2
               id={titleId}
@@ -99,10 +99,12 @@ export function Modal({
           </Button>
         </div>
 
-        <div className="px-5 py-4">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
+          {children}
+        </div>
 
         {footer && (
-          <div className="flex items-center justify-end gap-2 border-t border-border px-5 py-4">
+          <div className="flex shrink-0 items-center justify-end gap-2 border-t border-border px-5 py-4">
             {footer}
           </div>
         )}

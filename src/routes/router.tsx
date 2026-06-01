@@ -20,6 +20,8 @@ import { CustomersPage } from '@/features/admin/customers/pages/CustomersPage';
 import { CustomerDetailPage } from '@/features/admin/customers/pages/CustomerDetailPage';
 import { VehiclesPage } from '@/features/admin/vehicles/pages/VehiclesPage';
 import { VehicleDetailPage } from '@/features/admin/vehicles/pages/VehicleDetailPage';
+import { ServiceOrdersPage } from '@/features/admin/serviceOrders/pages/ServiceOrdersPage';
+import { ServiceOrderDetailPage } from '@/features/admin/serviceOrders/pages/ServiceOrderDetailPage';
 import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { PublicOnlyRoute } from '@/routes/PublicOnlyRoute';
 import { RoleGuard } from '@/routes/RoleGuard';
@@ -63,7 +65,8 @@ export const router = createBrowserRouter([
               { path: ROUTES.ADMIN_CLIENT_DETAIL, element: <CustomerDetailPage /> },
               { path: ROUTES.ADMIN_VEHICLES, element: <VehiclesPage /> },
               { path: ROUTES.ADMIN_VEHICLE_DETAIL, element: <VehicleDetailPage /> },
-              { path: ROUTES.ADMIN_SERVICE_ORDERS, element: comingSoon },
+              { path: ROUTES.ADMIN_SERVICE_ORDERS, element: <ServiceOrdersPage /> },
+              { path: ROUTES.ADMIN_SERVICE_ORDER_DETAIL, element: <ServiceOrderDetailPage /> },
               { path: ROUTES.ADMIN_MECHANICS, element: comingSoon },
               { path: ROUTES.ADMIN_INVENTORY, element: comingSoon },
               { path: ROUTES.ADMIN_PURCHASES, element: comingSoon },

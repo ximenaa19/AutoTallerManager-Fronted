@@ -545,4 +545,42 @@
 
 ---
 
+# Phase 4.4 — Admin Service Orders (2026-05-31)
+
+## OrderServiceDto / CreateOrderServiceRequest / UpdateOrderServiceRequest
+
+**Status:** Deferred — add/edit/delete order service lines disabled
+
+**Related page/feature:** Admin → Service order detail → Services panel
+
+**Problem:** §9 lists CRUD routes and type names for `/api/order-services`, but §10 does not document `OrderServiceDto` field lists or create/update JSON bodies.
+
+**Frontend handling:** Services are displayed read-only from `ServiceOrderFullDetailDto.services`. Confirmed actions remain enabled: assign/unassign mechanic, work report (`PUT /api/order-services/{id}/work-report`), request part. POST/PUT/DELETE on `/api/order-services` are not called from the UI.
+
+---
+
+## OrderStatusHistoryDto
+
+**Status:** Deferred — status history panel not wired
+
+**Related page/feature:** Admin → Service order detail → Status history
+
+**Problem:** GET `/api/order-status-histories` is listed in §9, but §10 does not document `OrderStatusHistoryDto` response fields (e.g. `serviceOrderId`, status transition, observation, timestamp).
+
+**Frontend handling:** Detail page shows a deferred placeholder. Do not fetch or render history rows until DTO fields are added to `api-contract.md` §10.
+
+---
+
+## CreateServiceOrderRequest / UpdateServiceOrderRequest (direct CRUD)
+
+**Status:** Deferred — direct POST/PUT on `/api/service-orders` not used
+
+**Related page/feature:** Admin → Service orders
+
+**Problem:** §9 names create/update request types for `/api/service-orders`, but §10 documents only `ServiceOrderDto` response fields, not create/update JSON bodies.
+
+**Frontend handling:** New orders use the fully documented workshop intake flow (`POST /api/workshop-intake/create-service-order` with `CreateWorkshopIntakeRequest`). Direct service-order CRUD is not exposed.
+
+---
+
 *Last reviewed against backend: 2026-05-29. Update this file when backend or deployment config changes.*
