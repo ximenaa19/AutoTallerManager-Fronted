@@ -5,6 +5,7 @@ import type {
   ServiceOrderDto,
   ServiceOrderFullDetailDto,
   ServiceOrderWorkflowDto,
+  UpdateServiceOrderRequest,
   VoidServiceOrderRequest,
 } from '@/features/admin/serviceOrders/types/serviceOrders.types';
 
@@ -21,6 +22,10 @@ export const serviceOrdersApi = {
     return httpClient.get<ServiceOrderFullDetailDto>(
       `/api/service-orders/${id}/full-detail`,
     );
+  },
+
+  update(id: number, body: UpdateServiceOrderRequest) {
+    return httpClient.put<ServiceOrderDto>(`/api/service-orders/${id}`, body);
   },
 
   changeStatus(id: number, body: ChangeServiceOrderStatusRequest) {

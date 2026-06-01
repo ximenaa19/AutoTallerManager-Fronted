@@ -1,7 +1,9 @@
 import { httpClient } from '@/api/httpClient';
 import type {
   ClientVehicleDto,
+  CreateVehicleRequest,
   TransferVehicleOwnershipRequest,
+  UpdateVehicleRequest,
   VehicleDto,
   VehicleSearchResultDto,
 } from '@/features/admin/vehicles/types/vehicles.types';
@@ -13,6 +15,14 @@ export const vehiclesApi = {
 
   getById(id: number) {
     return httpClient.get<VehicleDto>(`/api/vehicles/${id}`);
+  },
+
+  create(body: CreateVehicleRequest) {
+    return httpClient.post<VehicleDto>('/api/vehicles', body);
+  },
+
+  update(id: number, body: UpdateVehicleRequest) {
+    return httpClient.put<VehicleDto>(`/api/vehicles/${id}`, body);
   },
 
   delete(id: number) {

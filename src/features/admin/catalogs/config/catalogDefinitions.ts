@@ -212,9 +212,7 @@ export const CATALOG_DEFINITIONS: CatalogDefinition[] = [
     group: 'vehicles',
     apiPath: '/api/vehicle-brands',
     idField: 'brandId',
-    operations: { create: false, update: false, delete: false },
-    readOnlyReason:
-      'Create/update request fields for vehicle brands are not documented in api-contract.md §10.',
+    operations: { create: true, update: true, delete: true },
     fields: [
       {
         key: 'brandId',
@@ -227,6 +225,8 @@ export const CATALOG_DEFINITIONS: CatalogDefinition[] = [
         key: 'brandName',
         label: 'Brand name',
         type: 'text',
+        required: true,
+        maxLength: 80,
         showInTable: true,
       },
     ],
@@ -238,9 +238,7 @@ export const CATALOG_DEFINITIONS: CatalogDefinition[] = [
     group: 'vehicles',
     apiPath: '/api/vehicle-models',
     idField: 'modelId',
-    operations: { create: false, update: false, delete: false },
-    readOnlyReason:
-      'Create/update request fields for vehicle models are not documented in api-contract.md §10.',
+    operations: { create: true, update: true, delete: true },
     fields: [
       {
         key: 'modelId',
@@ -251,14 +249,20 @@ export const CATALOG_DEFINITIONS: CatalogDefinition[] = [
       },
       {
         key: 'brandId',
-        label: 'Brand ID',
-        type: 'text',
+        label: 'Brand',
+        type: 'select',
+        required: true,
         showInTable: true,
+        selectCatalogKey: 'vehicle-brands',
+        selectLabelField: 'brandName',
+        selectValueField: 'brandId',
       },
       {
         key: 'modelName',
         label: 'Model name',
         type: 'text',
+        required: true,
+        maxLength: 80,
         showInTable: true,
       },
     ],

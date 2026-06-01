@@ -39,6 +39,26 @@ export interface TransferVehicleOwnershipRequest {
   transferDate?: string;
 }
 
+export interface CreateVehicleRequest {
+  modelId: number;
+  vehicleTypeId: number;
+  vin: string;
+  year: number;
+  color?: string;
+  mileage: number;
+  isActive: boolean;
+}
+
+export interface UpdateVehicleRequest {
+  modelId: number;
+  vehicleTypeId: number;
+  vin: string;
+  year: number;
+  color?: string;
+  mileage: number;
+  isActive: boolean;
+}
+
 export interface VehicleBrandRecord {
   brandId: number;
   brandName: string;

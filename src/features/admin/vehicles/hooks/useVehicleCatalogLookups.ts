@@ -11,12 +11,16 @@ export interface VehicleCatalogLookups {
   typeNameById: Map<number, string>;
   brandNameById: Map<number, string>;
   modelLabelById: Map<number, string>;
+  types: VehicleTypeRecord[];
+  models: VehicleModelRecord[];
 }
 
 const emptyLookups: VehicleCatalogLookups = {
   typeNameById: new Map(),
   brandNameById: new Map(),
   modelLabelById: new Map(),
+  types: [],
+  models: [],
 };
 
 export function useVehicleCatalogLookups() {
@@ -55,6 +59,8 @@ export function useVehicleCatalogLookups() {
         ),
         brandNameById,
         modelLabelById,
+        types: typesResponse.data,
+        models: modelsResponse.data,
       });
     } catch (err) {
       setLookups(emptyLookups);

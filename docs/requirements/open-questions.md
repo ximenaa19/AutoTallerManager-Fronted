@@ -481,9 +481,31 @@
 **Frontend handling (Phase 4.2):**
 
 - **Full CRUD** enabled only for simple name-based catalogs where list response fields are typed using `MechanicSpecialtyDto` (`specialtyId`, `name`) as the confirmed exemplar plus api-contract FK naming (`genderId`, `serviceTypeId`, etc.): genders, street-types, vehicle-types, service-types, mechanic-specialties, order-statuses, part-categories, part-brands, payment-methods, payment-statuses, invoice-statuses, card-types, audit-action-types.
-- **Read-only** (GET list/display only; no create/edit/delete UI) for catalogs whose response or request shapes are not documented in §10 prose: document-types (`code` + `name`), email-domains (`domain`), vehicle-brands (`brandName`), vehicle-models (`brandId`, `modelName`), countries (`phoneCode`), departments, cities, neighborhoods (FK hierarchy).
+- **Read-only** (GET list/display only; no create/edit/delete UI) for catalogs whose response or request shapes are not documented in §10 prose: document-types (`code` + `name`), email-domains (`domain`), countries (`phoneCode`), departments, cities, neighborhoods (FK hierarchy).
 
-**Decision needed:** Add explicit `Create*/Update*` JSON field tables to `api-contract.md` §10 for read-only catalogs so the generic catalog form can enable writes safely.
+**Update (2026-05-31):** Vehicle Brands and Vehicle Models CRUD confirmed from backend source and documented in `api-contract.md` §9 — full CRUD enabled in Admin Catalogs.
+
+---
+
+## Vehicle Brands and Vehicle Models CRUD request bodies
+
+**Status:** Resolved — full CRUD enabled in Admin Catalogs
+
+**Related page/feature:** Admin → Catalogs → Vehicle Brands / Vehicle Models; Create Client With Vehicle model dropdown
+
+**Confirmed in:** `Application/Features/VehicleBrands/*`, `Application/Features/VehicleModels/*`, `VehicleBrandsController.cs`, `VehicleModelsController.cs`
+
+**Response DTOs:**
+
+- `VehicleBrandDto`: `{ brandId, brandName }`
+- `VehicleModelDto`: `{ modelId, brandId, modelName }`
+
+**Create/update bodies:**
+
+- `CreateVehicleBrandRequest` / `UpdateVehicleBrandRequest`: `{ brandName }` — required, max 80, unique
+- `CreateVehicleModelRequest` / `UpdateVehicleModelRequest`: `{ brandId, modelName }` — brand must exist; model name required, max 80, unique per brand
+
+**Frontend handling:** Admin catalog pages `/admin/catalogs/vehicle-brands` and `/admin/catalogs/vehicle-models` support create, edit, and delete. Vehicle Models form uses a brand select loaded from Vehicle Brands.
 
 ---
 
@@ -513,13 +535,13 @@
 
 ## Vehicle create/update request bodies (POST/PUT /api/vehicles)
 
-**Status:** Deferred — create/edit disabled on Admin Vehicles
+**Status:** Resolved (2026-05-31, Phase 4.4.1)
 
 **Related page/feature:** Admin → Vehicles list/detail
 
-**Problem:** §9 names `CreateVehicleRequest` / `UpdateVehicleRequest` but §10 does not document JSON field lists (unlike POST `/api/persons`).
+**Confirmed in:** `VehiclesController.cs`, `CreateVehicleRequest.cs`, `UpdateVehicleRequest.cs`, `VehicleDto.cs`, `VehicleService.cs`
 
-**Frontend handling:** List, detail, delete, and transfer ownership are implemented. “New vehicle” and edit forms remain disabled with deferred messaging. `VehicleDto` display fields are typed from §7 domain model + §10 search/client DTOs; validate `createdAt` against live API during QA.
+**Resolution:** Request/response fields documented in `api-contract.md` §9 (Vehicles CRUD) and §10. Admin Vehicles supports create and edit via modal form (model, type, VIN, year, color, mileage, active flag). Catalog selects use GET `/api/vehicle-types`, `/api/vehicle-models`, `/api/vehicle-brands`.
 
 ---
 
@@ -549,13 +571,13 @@
 
 ## OrderServiceDto / CreateOrderServiceRequest / UpdateOrderServiceRequest
 
-**Status:** Deferred — add/edit/delete order service lines disabled
+**Status:** Resolved (2026-05-31, Phase 4.4.1)
 
 **Related page/feature:** Admin → Service order detail → Services panel
 
-**Problem:** §9 lists CRUD routes and type names for `/api/order-services`, but §10 does not document `OrderServiceDto` field lists or create/update JSON bodies.
+**Confirmed in:** `OrderServicesController.cs`, `OrderServiceDto.cs`, `CreateOrderServiceRequest.cs`, `UpdateOrderServiceRequest.cs`, `OrderServiceService.cs`
 
-**Frontend handling:** Services are displayed read-only from `ServiceOrderFullDetailDto.services`. Confirmed actions remain enabled: assign/unassign mechanic, work report (`PUT /api/order-services/{id}/work-report`), request part. POST/PUT/DELETE on `/api/order-services` are not called from the UI.
+**Resolution:** Documented in `api-contract.md` §9 and §10. Add/edit/delete line items enabled on service order detail when parent order is not Cancelled/Voided. Assign/unassign mechanic, work report, and request part unchanged.
 
 ---
 
@@ -573,14 +595,14 @@
 
 ## CreateServiceOrderRequest / UpdateServiceOrderRequest (direct CRUD)
 
-**Status:** Deferred — direct POST/PUT on `/api/service-orders` not used
+**Status:** Partially resolved (2026-05-31, Phase 4.4.1)
 
 **Related page/feature:** Admin → Service orders
 
-**Problem:** §9 names create/update request types for `/api/service-orders`, but §10 documents only `ServiceOrderDto` response fields, not create/update JSON bodies.
+**Confirmed in:** `ServiceOrdersController.cs`, `UpdateServiceOrderRequest.cs`, `ServiceOrderService.cs`
 
-**Frontend handling:** New orders use the fully documented workshop intake flow (`POST /api/workshop-intake/create-service-order` with `CreateWorkshopIntakeRequest`). Direct service-order CRUD is not exposed.
+**Resolution:** `PUT /api/service-orders/{id}` body documented in `api-contract.md`. Admin service order detail exposes **Edit order** for header fields (vehicle, entry date, estimated delivery, general description). Status changes remain workflow-only (`change-status`, `cancel`, `void`, `complete`). **Create** still uses workshop intake (`POST /api/workshop-intake/create-service-order`); direct `POST /api/service-orders` is not exposed in Admin UI.
 
 ---
 
-*Last reviewed against backend: 2026-05-29. Update this file when backend or deployment config changes.*
+*Last reviewed against backend: 2026-05-31 (Phase 4.4.1). Update this file when backend or deployment config changes.*

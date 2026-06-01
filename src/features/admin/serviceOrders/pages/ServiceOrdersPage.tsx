@@ -15,21 +15,58 @@ import { CreateServiceOrderForm } from '@/features/admin/serviceOrders/component
 import { ServiceOrderFilters } from '@/features/admin/serviceOrders/components/ServiceOrderFilters';
 import { ServiceOrderStatusBadge } from '@/features/admin/serviceOrders/components/ServiceOrderStatusBadge';
 import { useWorkshopCatalogLookups } from '@/features/admin/serviceOrders/hooks/useWorkshopCatalogLookups';
-import {
-  serviceOrderMatchesSearch,
-  type ServiceOrderDto,
-} from '@/features/admin/serviceOrders/types/serviceOrders.types';
+import type { ServiceOrderDto } from '@/features/admin/serviceOrders/types/serviceOrders.types';
 import { vehiclesApi } from '@/features/admin/vehicles/api/vehicles.api';
-import { useVehicleCatalogLookups } from '@/features/admin/vehicles/hooks/useVehicleCatalogLookups';
+import {
+  formatVehicleModelLabel,
+  formatVehicleTypeLabel,
+  useVehicleCatalogLookups,
+} from '@/features/admin/vehicles/hooks/useVehicleCatalogLookups';
 import type { VehicleDto } from '@/features/admin/vehicles/types/vehicles.types';
 import { useAsyncRequest } from '@/hooks/useAsyncRequest';
 import { adminServiceOrderDetailPath } from '@/routes/routePaths';
 import { formatDateTime } from '@/utils/format';
 
+function getServiceOrderSearchText(params: {
+  order: ServiceOrderDto;
+  vehicle?: VehicleDto;
+  orderStatusNameById: Map<number, string>;
+  vehicleLookups: ReturnType<typeof useVehicleCatalogLookups>['lookups'];
+}): string {
+  const { order, vehicle, orderStatusNameById, vehicleLookups } = params;
+  const statusLabel = orderStatusNameById.get(order.orderStatusId) ?? `Status #${order.orderStatusId}`;
+  const entryDate = order.entryDate ? formatDateTime(order.entryDate) : '';
+
+  const vehicleModelLabel = vehicle
+    ? formatVehicleModelLabel(vehicle.modelId, vehicleLookups)
+    : '';
+  const vehicleTypeLabel = vehicle
+    ? formatVehicleTypeLabel(vehicle.vehicleTypeId, vehicleLookups)
+    : '';
+
+  return [
+    String(order.serviceOrderId),
+    `#${order.serviceOrderId}`,
+    String(order.vehicleId),
+    `#${order.vehicleId}`,
+    vehicle?.vin,
+    vehicleModelLabel,
+    vehicleTypeLabel,
+    order.generalDescription,
+    statusLabel,
+    order.entryDate,
+    entryDate,
+    order.createdAt,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+}
+
 export function ServiceOrdersPage() {
   const navigate = useNavigate();
   const { lookups, isLoading: catalogsLoading } = useWorkshopCatalogLookups();
-  useVehicleCatalogLookups();
+  const { lookups: vehicleLookups } = useVehicleCatalogLookups();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -65,10 +102,16 @@ export function ServiceOrdersPage() {
       result = result.filter((order) => order.orderStatusId === statusId);
     }
 
-    return filterBySearchTerm(result, searchTerm, (order, term) =>
-      serviceOrderMatchesSearch(order, term, vehicleById.get(order.vehicleId)?.vin),
-    );
-  }, [orders, searchTerm, statusFilter, vehicleById]);
+    return filterBySearchTerm(result, searchTerm, (order, term) => {
+      const vehicle = vehicleById.get(order.vehicleId);
+      return getServiceOrderSearchText({
+        order,
+        vehicle,
+        orderStatusNameById: lookups.orderStatusNameById,
+        vehicleLookups,
+      }).includes(term);
+    });
+  }, [orders, searchTerm, statusFilter, vehicleById, lookups.orderStatusNameById, vehicleLookups]);
 
   const pagination = useClientPagination(filteredOrders);
 

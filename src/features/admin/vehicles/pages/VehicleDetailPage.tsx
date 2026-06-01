@@ -1,15 +1,17 @@
 import { useCallback, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ArrowRightLeft, Trash2 } from 'lucide-react';
+import { ArrowLeft, ArrowRightLeft, Pencil, Trash2 } from 'lucide-react';
 import { getErrorMessage } from '@/api/apiError';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { LoadingState } from '@/components/feedback/LoadingState';
 import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
 import { AdminPageHeader } from '@/features/admin/components/AdminPageHeader';
 import { ConfirmActionModal } from '@/features/admin/components/ConfirmActionModal';
 import { vehiclesApi } from '@/features/admin/vehicles/api/vehicles.api';
 import { TransferOwnershipModal } from '@/features/admin/vehicles/components/TransferOwnershipModal';
 import { VehicleDetailPanel } from '@/features/admin/vehicles/components/VehicleDetailPanel';
+import { VehicleForm } from '@/features/admin/vehicles/components/VehicleForm';
 import { useVehicleCatalogLookups } from '@/features/admin/vehicles/hooks/useVehicleCatalogLookups';
 import { useAsyncRequest } from '@/hooks/useAsyncRequest';
 import { ROUTES } from '@/routes/routePaths';
@@ -22,6 +24,7 @@ export function VehicleDetailPage() {
 
   const { lookups, isLoading: catalogsLoading } = useVehicleCatalogLookups();
   const [transferOpen, setTransferOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -63,6 +66,15 @@ export function VehicleDetailPage() {
     await vehiclesApi.transferOwnership(vehicleId, payload);
     setSuccessMessage('Ownership transferred successfully.');
     setTransferOpen(false);
+    setRefreshKey((value) => value + 1);
+  };
+
+  const handleSaveVehicle = async (
+    payload: Parameters<typeof vehiclesApi.update>[1],
+  ) => {
+    await vehiclesApi.update(vehicleId, payload);
+    setSuccessMessage('Vehicle updated successfully.');
+    setEditOpen(false);
     setRefreshKey((value) => value + 1);
   };
 
@@ -111,6 +123,13 @@ export function VehicleDetailPage() {
         description={vehicle.vin ? `VIN ${vehicle.vin}` : 'Workshop fleet record'}
         actions={
           <>
+            <Button
+              variant="secondary"
+              leftIcon={<Pencil className="size-4" />}
+              onClick={() => setEditOpen(true)}
+            >
+              Edit vehicle
+            </Button>
             <Button
               variant="secondary"
               leftIcon={<ArrowRightLeft className="size-4" />}
@@ -168,6 +187,22 @@ export function VehicleDetailPage() {
           deferred until the contract is updated.
         </p>
       </section>
+
+      <Modal
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        title={`Edit vehicle #${vehicle.vehicleId}`}
+        description="Update model, type, VIN, and other fleet fields."
+        size="lg"
+      >
+        <VehicleForm
+          mode="edit"
+          initialVehicle={vehicle}
+          lookups={lookups}
+          onSubmit={handleSaveVehicle}
+          onCancel={() => setEditOpen(false)}
+        />
+      </Modal>
 
       <TransferOwnershipModal
         open={transferOpen}

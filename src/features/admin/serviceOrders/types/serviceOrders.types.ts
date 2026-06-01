@@ -109,6 +109,16 @@ export interface VoidServiceOrderRequest {
   observation?: string;
 }
 
+export interface UpdateServiceOrderRequest {
+  vehicleId: number;
+  orderStatusId: number;
+  entryDate: string;
+  estimatedDeliveryDate?: string;
+  generalDescription?: string;
+  cancellationReason?: string;
+  cancellationDate?: string;
+}
+
 /** Seeded reference IDs from api-contract.md §7. */
 export const ORDER_STATUS_IDS = {
   pending: 1,

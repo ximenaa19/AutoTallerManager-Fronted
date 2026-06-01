@@ -1,4 +1,35 @@
-/** Types aligned with api-contract.md §10 Order service execution. */
+/** Types aligned with api-contract.md §10 Order services. */
+
+export interface OrderServiceDto {
+  orderServiceId: number;
+  serviceOrderId: number;
+  serviceTypeId: number;
+  description?: string;
+  workPerformed?: string;
+  laborCost: number;
+  customerApproved?: boolean;
+  approvalDate?: string;
+}
+
+export interface CreateOrderServiceRequest {
+  serviceOrderId: number;
+  serviceTypeId: number;
+  description?: string;
+  workPerformed?: string;
+  laborCost: number;
+  customerApproved?: boolean;
+  approvalDate?: string;
+}
+
+export interface UpdateOrderServiceRequest {
+  serviceOrderId: number;
+  serviceTypeId: number;
+  description?: string;
+  workPerformed?: string;
+  laborCost: number;
+  customerApproved?: boolean;
+  approvalDate?: string;
+}
 
 export interface ServiceExecutionResultDto {
   id: number;

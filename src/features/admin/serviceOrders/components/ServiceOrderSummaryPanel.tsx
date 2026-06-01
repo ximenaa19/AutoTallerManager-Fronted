@@ -1,3 +1,5 @@
+import { Pencil } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 import type { ServiceOrderFullDetailDto } from '@/features/admin/serviceOrders/types/serviceOrders.types';
 import { formatCurrency, formatDateTime } from '@/utils/format';
 import { ServiceOrderStatusBadge } from '@/features/admin/serviceOrders/components/ServiceOrderStatusBadge';
@@ -6,6 +8,7 @@ import type { WorkshopCatalogLookups } from '@/features/admin/serviceOrders/hook
 export interface ServiceOrderSummaryPanelProps {
   order: ServiceOrderFullDetailDto;
   lookups: WorkshopCatalogLookups;
+  onEdit?: () => void;
 }
 
 function DetailRow({ label, value }: { label: string; value: string }) {
@@ -22,6 +25,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 export function ServiceOrderSummaryPanel({
   order,
   lookups,
+  onEdit,
 }: ServiceOrderSummaryPanelProps) {
   const servicesTotal = order.services.reduce((sum, service) => sum + service.laborCost, 0);
   const partsTotal = order.services.reduce(
@@ -32,10 +36,25 @@ export function ServiceOrderSummaryPanel({
 
   return (
     <section className="rounded-lg border border-border bg-bg-surface p-5">
-      <h2 className="text-base font-semibold text-text-primary">Order summary</h2>
-      <p className="mt-1 text-sm text-text-secondary">
-        Key dates, status, and financial snapshot from confirmed full-detail fields.
-      </p>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-base font-semibold text-text-primary">Order summary</h2>
+          <p className="mt-1 text-sm text-text-secondary">
+            Key dates, status, and financial snapshot. Edit header fields without changing workflow
+            status.
+          </p>
+        </div>
+        {onEdit && (
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon={<Pencil className="size-4" />}
+            onClick={onEdit}
+          >
+            Edit order
+          </Button>
+        )}
+      </div>
 
       <dl className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div className="flex flex-col gap-1">

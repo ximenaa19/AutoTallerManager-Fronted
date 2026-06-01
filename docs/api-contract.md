@@ -723,6 +723,222 @@ Returns all persons as `PersonDto[]`.
 
 **Success (201):** `PersonDto` with generated `personId` and `createdAt`.
 
+##### Vehicle brands (Admin CRUD)
+
+**Auth:** Admin only  
+**Source:** `Api/Controllers/VehicleBrandsController.cs`, `Application/Features/VehicleBrands/*`
+
+| Method | Route | Success |
+|--------|-------|---------|
+| GET | `/api/vehicle-brands` | `VehicleBrandDto[]` |
+| GET | `/api/vehicle-brands/{id}` | `VehicleBrandDto` |
+| POST | `/api/vehicle-brands` | `VehicleBrandDto` (201) |
+| PUT | `/api/vehicle-brands/{id}` | `VehicleBrandDto` |
+| DELETE | `/api/vehicle-brands/{id}` | 204 No Content |
+
+**Response (`VehicleBrandDto`):**
+
+| Field | Type | Notes |
+|-------|------|-------|
+| brandId | int | PK |
+| brandName | string | Max 80 chars |
+
+**Create body (`CreateVehicleBrandRequest`):**
+
+| Field | Type | Required | Validation |
+|-------|------|----------|------------|
+| brandName | string | Yes | Trimmed; non-empty; max 80; unique |
+
+**Update body (`UpdateVehicleBrandRequest`):** same fields as create.
+
+**Example create request:**
+
+```json
+{ "brandName": "Toyota" }
+```
+
+**Possible errors:** 404 NotFound; 409 BrandNameAlreadyExists; 409 InUse on delete when models reference the brand.
+
+##### Vehicle models (Admin CRUD)
+
+**Auth:** Admin only  
+**Source:** `Api/Controllers/VehicleModelsController.cs`, `Application/Features/VehicleModels/*`
+
+| Method | Route | Success |
+|--------|-------|---------|
+| GET | `/api/vehicle-models` | `VehicleModelDto[]` |
+| GET | `/api/vehicle-models/{id}` | `VehicleModelDto` |
+| POST | `/api/vehicle-models` | `VehicleModelDto` (201) |
+| PUT | `/api/vehicle-models/{id}` | `VehicleModelDto` |
+| DELETE | `/api/vehicle-models/{id}` | 204 No Content |
+
+**Response (`VehicleModelDto`):**
+
+| Field | Type | Notes |
+|-------|------|-------|
+| modelId | int | PK |
+| brandId | int | FK → VehicleBrand |
+| modelName | string | Max 80 chars; unique per brand |
+
+**Create body (`CreateVehicleModelRequest`):**
+
+| Field | Type | Required | Validation |
+|-------|------|----------|------------|
+| brandId | int | Yes | Must be > 0; brand must exist |
+| modelName | string | Yes | Trimmed; non-empty; max 80; unique within brand |
+
+**Update body (`UpdateVehicleModelRequest`):** same fields as create.
+
+**Example create request:**
+
+```json
+{ "brandId": 1, "modelName": "Corolla" }
+```
+
+**Possible errors:** 404 NotFound; 400 BrandIdInvalid / ModelNameRequired / ModelNameTooLong; 404 BrandNotFound; 409 ModelNameAlreadyExists; 409 InUse on delete when vehicles reference the model.
+
+##### Vehicles (Admin CRUD)
+
+**Auth:** Admin, Receptionist  
+**Source:** `Api/Controllers/VehiclesController.cs`, `Application/Features/Vehicles/*`
+
+| Method | Route | Success |
+|--------|-------|---------|
+| GET | `/api/vehicles` | `VehicleDto[]` |
+| GET | `/api/vehicles/{id}` | `VehicleDto` |
+| POST | `/api/vehicles` | `VehicleDto` (201) |
+| PUT | `/api/vehicles/{id}` | `VehicleDto` |
+| DELETE | `/api/vehicles/{id}` | 204 No Content |
+
+**Response (`VehicleDto`):**
+
+| Field | Type | Notes |
+|-------|------|-------|
+| vehicleId | int | PK |
+| modelId | int | FK → VehicleModel |
+| vehicleTypeId | int | FK → VehicleType |
+| vin | string | Exactly 17 alphanumeric characters (normalized uppercase) |
+| year | int | 1900 … current UTC year + 1 |
+| color | string? | Max 30 chars |
+| mileage | int | ≥ 0 |
+| isActive | bool | |
+
+**Create body (`CreateVehicleRequest`) / Update body (`UpdateVehicleRequest`):**
+
+| Field | Type | Required | Validation |
+|-------|------|----------|------------|
+| modelId | int | Yes | > 0; model must exist |
+| vehicleTypeId | int | Yes | > 0; type must exist |
+| vin | string | Yes | Trimmed; uppercase; exactly 17 letters/digits; unique |
+| year | int | Yes | 1900 … current UTC year + 1 |
+| color | string? | No | Max 30 chars |
+| mileage | int | Yes | ≥ 0 |
+| isActive | bool | Yes | |
+
+**Example create request:**
+
+```json
+{
+  "modelId": 1,
+  "vehicleTypeId": 1,
+  "vin": "1HGBH41JXMN109186",
+  "year": 2020,
+  "color": "Silver",
+  "mileage": 45000,
+  "isActive": true
+}
+```
+
+**Possible errors:** 404 NotFound; 400 validation (modelId, vehicleTypeId, vin, year, color, mileage); 404 ModelNotFound / VehicleTypeNotFound; 409 VinAlreadyExists; 409 InUse on delete when owner history or service orders reference the vehicle.
+
+**Transfer ownership** (unchanged): `POST /api/vehicles/{vehicleId}/transfer-ownership` — see Client vehicles section.
+
+##### Service orders — direct update (PUT)
+
+**Auth:** Admin, Receptionist  
+**Source:** `Api/Controllers/ServiceOrdersController.cs`, `Application/Features/ServiceOrders/Requests/UpdateServiceOrderRequest.cs`
+
+`PUT /api/service-orders/{id}` updates header fields on an existing order. **Status changes** should use workflow routes (`POST …/change-status`, `cancel`, `void`, `complete`). The update body still requires `orderStatusId` (send the current value when editing header fields only).
+
+**Update body (`UpdateServiceOrderRequest`):**
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| vehicleId | int | Yes | Must exist and be active |
+| orderStatusId | int | Yes | Must exist; use workflow endpoints to change status in the UI |
+| entryDate | string (ISO date-time) | Yes | |
+| estimatedDeliveryDate | string (ISO date-time)? | No | |
+| generalDescription | string? | No | |
+| cancellationReason | string? | Conditional | Required when `orderStatusId` is Cancelled or Voided |
+| cancellationDate | string (ISO date-time)? | No | Defaults to UTC now when status is Cancelled/Voided and reason is set |
+
+**Example update (header edit, status unchanged):**
+
+```json
+{
+  "vehicleId": 12,
+  "orderStatusId": 2,
+  "entryDate": "2026-05-31T10:00:00Z",
+  "estimatedDeliveryDate": "2026-06-02T18:00:00Z",
+  "generalDescription": "Oil change and brake inspection"
+}
+```
+
+**Possible errors:** 404 NotFound; 404 VehicleNotFound; 400 VehicleInactive; 404 OrderStatusNotFound; 409 ActiveOrderAlreadyExists; 400 CancellationReasonRequired when status is Cancelled/Voided.
+
+##### Order services — CRUD
+
+**Auth:** Admin, Receptionist (CRUD); Admin, Receptionist, Mechanic (execution routes below)  
+**Source:** `Api/Controllers/OrderServicesController.cs`, `Application/Features/OrderServices/*`
+
+| Method | Route | Success |
+|--------|-------|---------|
+| GET | `/api/order-services` | `OrderServiceDto[]` |
+| GET | `/api/order-services/{id}` | `OrderServiceDto` |
+| POST | `/api/order-services` | `OrderServiceDto` (201) |
+| PUT | `/api/order-services/{id}` | `OrderServiceDto` |
+| DELETE | `/api/order-services/{id}` | 204 No Content |
+
+**Response (`OrderServiceDto`):**
+
+| Field | Type | Notes |
+|-------|------|-------|
+| orderServiceId | int | PK |
+| serviceOrderId | int | FK → ServiceOrder |
+| serviceTypeId | int | FK → ServiceType |
+| description | string? | |
+| workPerformed | string? | |
+| laborCost | decimal | ≥ 0 |
+| customerApproved | bool? | |
+| approvalDate | string (ISO date-time)? | |
+
+**Create body (`CreateOrderServiceRequest`) / Update body (`UpdateOrderServiceRequest`):**
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| serviceOrderId | int | Yes | Order must exist; not Cancelled/Voided |
+| serviceTypeId | int | Yes | Must exist |
+| description | string? | No | |
+| workPerformed | string? | No | Prefer `PUT …/work-report` for mechanic updates |
+| laborCost | decimal | Yes | ≥ 0 |
+| customerApproved | bool? | No | |
+| approvalDate | string (ISO date-time)? | No | Resolved with approval flag in service |
+
+**Example create request:**
+
+```json
+{
+  "serviceOrderId": 5,
+  "serviceTypeId": 2,
+  "description": "Replace front pads",
+  "laborCost": 120.0
+}
+```
+
+**Possible errors:** 404 NotFound; 404 ServiceOrderNotFound / ServiceTypeNotFound; 409 ServiceOrderCannotBeModifiedConflict when parent order is Cancelled or Voided.
+
+**Execution routes** (unchanged): `PUT /api/order-services/{id}/work-report`, `POST …/assign-mechanic`, `POST …/unassign-mechanic`, `POST …/request-part` — see §10 Order service execution.
+
 ##### CRUD resources reference
 
 | Resource route | DTO | Create request | Update request | Auth roles |
@@ -1406,6 +1622,66 @@ export interface WorkshopCatalogsDto {
   partBrands: CatalogItemDto[];
   auditActionTypes: CatalogItemDto[];
 }
+
+export interface VehicleBrandDto {
+  brandId: number;
+  brandName: string;
+}
+
+export interface CreateVehicleBrandRequest {
+  brandName?: string;
+}
+
+export interface UpdateVehicleBrandRequest {
+  brandName?: string;
+}
+
+export interface VehicleModelDto {
+  modelId: number;
+  brandId: number;
+  modelName: string;
+}
+
+export interface CreateVehicleModelRequest {
+  brandId: number;
+  modelName?: string;
+}
+
+export interface UpdateVehicleModelRequest {
+  brandId: number;
+  modelName?: string;
+}
+
+export interface VehicleDto {
+  vehicleId: number;
+  modelId: number;
+  vehicleTypeId: number;
+  vin: string;
+  year: number;
+  color?: string;
+  mileage: number;
+  isActive: boolean;
+}
+
+export interface CreateVehicleRequest {
+  modelId: number;
+  vehicleTypeId: number;
+  vin: string;
+  year: number;
+  color?: string;
+  mileage: number;
+  isActive: boolean;
+}
+
+export interface UpdateVehicleRequest {
+  modelId: number;
+  vehicleTypeId: number;
+  vin: string;
+  year: number;
+  color?: string;
+  mileage: number;
+  isActive: boolean;
+}
 ```
 
 ### Service orders
@@ -1495,6 +1771,55 @@ export interface ServiceOrderWorkflowDto {
   orderStatusHistoryId: number;
   cancellationReason?: string;
   cancellationDate?: string;
+}
+
+export interface CreateServiceOrderRequest {
+  vehicleId: number;
+  orderStatusId: number;
+  entryDate?: string;
+  estimatedDeliveryDate?: string;
+  generalDescription?: string;
+}
+
+export interface UpdateServiceOrderRequest {
+  vehicleId: number;
+  orderStatusId: number;
+  entryDate: string;
+  estimatedDeliveryDate?: string;
+  generalDescription?: string;
+  cancellationReason?: string;
+  cancellationDate?: string;
+}
+
+export interface OrderServiceDto {
+  orderServiceId: number;
+  serviceOrderId: number;
+  serviceTypeId: number;
+  description?: string;
+  workPerformed?: string;
+  laborCost: number;
+  customerApproved?: boolean;
+  approvalDate?: string;
+}
+
+export interface CreateOrderServiceRequest {
+  serviceOrderId: number;
+  serviceTypeId: number;
+  description?: string;
+  workPerformed?: string;
+  laborCost: number;
+  customerApproved?: boolean;
+  approvalDate?: string;
+}
+
+export interface UpdateOrderServiceRequest {
+  serviceOrderId: number;
+  serviceTypeId: number;
+  description?: string;
+  workPerformed?: string;
+  laborCost: number;
+  customerApproved?: boolean;
+  approvalDate?: string;
 }
 ```
 

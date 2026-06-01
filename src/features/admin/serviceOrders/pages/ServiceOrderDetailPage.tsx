@@ -13,6 +13,7 @@ import { ServiceOrderHistoryPanel } from '@/features/admin/serviceOrders/compone
 import { ServiceOrderServicesPanel } from '@/features/admin/serviceOrders/components/ServiceOrderServicesPanel';
 import { ServiceOrderSummaryPanel } from '@/features/admin/serviceOrders/components/ServiceOrderSummaryPanel';
 import { VoidOrderModal } from '@/features/admin/serviceOrders/components/VoidOrderModal';
+import { EditServiceOrderModal } from '@/features/admin/serviceOrders/components/EditServiceOrderModal';
 import { serviceOrdersApi } from '@/features/admin/serviceOrders/api/serviceOrders.api';
 import { useWorkshopCatalogLookups } from '@/features/admin/serviceOrders/hooks/useWorkshopCatalogLookups';
 import { vehiclesApi } from '@/features/admin/vehicles/api/vehicles.api';
@@ -33,6 +34,7 @@ export function ServiceOrderDetailPage() {
     useVehicleCatalogLookups();
 
   const [actionModal, setActionModal] = useState<ActionModal>(null);
+  const [editOrderOpen, setEditOrderOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -148,8 +150,14 @@ export function ServiceOrderDetailPage() {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-6">
-          <ServiceOrderSummaryPanel order={order} lookups={lookups} />
+          <ServiceOrderSummaryPanel
+            order={order}
+            lookups={lookups}
+            onEdit={() => setEditOrderOpen(true)}
+          />
           <ServiceOrderServicesPanel
+            serviceOrderId={serviceOrderId}
+            orderStatusId={order.orderStatusId}
             services={order.services}
             lookups={lookups}
             onRefresh={refreshOrder}
@@ -166,6 +174,18 @@ export function ServiceOrderDetailPage() {
           isLoading={actionLoading}
         />
       </div>
+
+      <EditServiceOrderModal
+        open={editOrderOpen}
+        order={order}
+        lookups={lookups}
+        onClose={() => setEditOrderOpen(false)}
+        onSubmit={async (payload) => {
+          await serviceOrdersApi.update(serviceOrderId, payload);
+          setSuccessMessage('Order details updated.');
+          refreshOrder();
+        }}
+      />
 
       <ChangeStatusModal
         open={actionModal === 'changeStatus'}

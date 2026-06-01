@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRightLeft, Eye, ExternalLink, Trash2 } from 'lucide-react';
+import { ArrowRightLeft, Eye, ExternalLink, Pencil, Plus, Trash2 } from 'lucide-react';
 import { getErrorMessage } from '@/api/apiError';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -16,18 +16,42 @@ import {
 import { vehiclesApi } from '@/features/admin/vehicles/api/vehicles.api';
 import { VehicleDetailPanel } from '@/features/admin/vehicles/components/VehicleDetailPanel';
 import { TransferOwnershipModal } from '@/features/admin/vehicles/components/TransferOwnershipModal';
+import { VehicleForm } from '@/features/admin/vehicles/components/VehicleForm';
 import {
   formatVehicleModelLabel,
   formatVehicleTypeLabel,
   useVehicleCatalogLookups,
 } from '@/features/admin/vehicles/hooks/useVehicleCatalogLookups';
 import type { VehicleDto } from '@/features/admin/vehicles/types/vehicles.types';
-import { vehicleMatchesSearch } from '@/features/admin/vehicles/types/vehicles.types';
 import { useAsyncRequest } from '@/hooks/useAsyncRequest';
 import { adminVehicleDetailPath } from '@/routes/routePaths';
 import { formatDateTime, formatNumber } from '@/utils/format';
 
-type VehicleModalMode = 'view' | 'transfer' | null;
+type VehicleModalMode = 'view' | 'transfer' | 'create' | 'edit' | null;
+
+function getVehicleSearchText(vehicle: VehicleDto, lookups: ReturnType<typeof useVehicleCatalogLookups>['lookups']): string {
+  const createdAt = vehicle.createdAt ? formatDateTime(vehicle.createdAt) : '';
+  const modelLabel = formatVehicleModelLabel(vehicle.modelId, lookups);
+  const typeLabel = formatVehicleTypeLabel(vehicle.vehicleTypeId, lookups);
+  const statusLabel = vehicle.isActive ? 'Active' : 'Inactive';
+
+  return [
+    String(vehicle.vehicleId),
+    `#${vehicle.vehicleId}`,
+    vehicle.vin,
+    modelLabel,
+    typeLabel,
+    String(vehicle.year),
+    String(vehicle.mileage),
+    formatNumber(vehicle.mileage),
+    vehicle.color,
+    statusLabel,
+    createdAt,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+}
 
 export function VehiclesPage() {
   const navigate = useNavigate();
@@ -53,9 +77,9 @@ export function VehiclesPage() {
   const filteredVehicles = useMemo(
     () =>
       filterBySearchTerm(vehicles ?? [], searchTerm, (vehicle, term) =>
-        vehicleMatchesSearch(vehicle, term),
+        getVehicleSearchText(vehicle, lookups).includes(term),
       ),
-    [vehicles, searchTerm],
+    [vehicles, searchTerm, lookups],
   );
 
   const pagination = useClientPagination(filteredVehicles);
@@ -70,6 +94,16 @@ export function VehiclesPage() {
   const openTransferModal = (vehicle: VehicleDto) => {
     setSelectedVehicle(vehicle);
     setModalMode('transfer');
+  };
+
+  const openCreateModal = () => {
+    setSelectedVehicle(null);
+    setModalMode('create');
+  };
+
+  const openEditModal = (vehicle: VehicleDto) => {
+    setSelectedVehicle(vehicle);
+    setModalMode('edit');
   };
 
   const closeModal = () => {
@@ -103,6 +137,20 @@ export function VehiclesPage() {
 
     await vehiclesApi.transferOwnership(selectedVehicle.vehicleId, payload);
     setSuccessMessage(`Ownership transferred for vehicle #${selectedVehicle.vehicleId}.`);
+    closeModal();
+    refreshAll();
+  };
+
+  const handleSaveVehicle = async (
+    payload: Parameters<typeof vehiclesApi.create>[0],
+  ) => {
+    if (modalMode === 'edit' && selectedVehicle) {
+      await vehiclesApi.update(selectedVehicle.vehicleId, payload);
+      setSuccessMessage(`Vehicle #${selectedVehicle.vehicleId} updated.`);
+    } else {
+      const response = await vehiclesApi.create(payload);
+      setSuccessMessage(`Vehicle #${response.data.vehicleId} created.`);
+    }
     closeModal();
     refreshAll();
   };
@@ -176,6 +224,14 @@ export function VehiclesPage() {
             <Button
               variant="ghost"
               size="sm"
+              aria-label={`Edit vehicle ${vehicle.vehicleId}`}
+              onClick={() => openEditModal(vehicle)}
+            >
+              <Pencil className="size-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               aria-label={`View vehicle ${vehicle.vehicleId}`}
               onClick={() => openViewModal(vehicle)}
             >
@@ -208,10 +264,10 @@ export function VehiclesPage() {
     <div className="space-y-6">
       <AdminPageHeader
         title="Vehicles"
-        description="Fleet records for the workshop. View vehicle details, transfer ownership between customers, and remove unused records. Direct vehicle create/edit is deferred until request bodies are documented."
+        description="Fleet records for the workshop. Create and edit vehicles, transfer ownership between customers, and remove unused records."
         actions={
-          <Button variant="secondary" disabled title="Create vehicle request body not documented">
-            New vehicle (deferred)
+          <Button leftIcon={<Plus className="size-4" />} onClick={openCreateModal}>
+            New vehicle
           </Button>
         }
       />
@@ -285,6 +341,22 @@ export function VehiclesPage() {
         {selectedVehicle && (
           <VehicleDetailPanel vehicle={selectedVehicle} lookups={lookups} />
         )}
+      </Modal>
+
+      <Modal
+        open={modalMode === 'create' || modalMode === 'edit'}
+        onClose={closeModal}
+        title={modalMode === 'edit' ? `Edit vehicle #${selectedVehicle?.vehicleId ?? ''}` : 'New vehicle'}
+        description="Register a fleet record with model, type, and VIN."
+        size="lg"
+      >
+        <VehicleForm
+          mode={modalMode === 'edit' ? 'edit' : 'create'}
+          initialVehicle={modalMode === 'edit' ? selectedVehicle : null}
+          lookups={lookups}
+          onSubmit={handleSaveVehicle}
+          onCancel={closeModal}
+        />
       </Modal>
 
       {selectedVehicle && (
