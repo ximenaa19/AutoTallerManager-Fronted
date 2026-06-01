@@ -11,6 +11,9 @@ import { ClientDashboardPage } from '@/pages/dashboards/ClientDashboardPage';
 import { MechanicDashboardPage } from '@/pages/dashboards/MechanicDashboardPage';
 import { ReceptionistDashboardPage } from '@/pages/dashboards/ReceptionistDashboardPage';
 import { ComingSoonPage } from '@/pages/placeholders/ComingSoonPage';
+import { UsersPage } from '@/features/admin/pages/UsersPage';
+import { StaffPage } from '@/features/admin/pages/StaffPage';
+import { RolesPage } from '@/features/admin/pages/RolesPage';
 import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { PublicOnlyRoute } from '@/routes/PublicOnlyRoute';
 import { RoleGuard } from '@/routes/RoleGuard';
@@ -45,9 +48,9 @@ export const router = createBrowserRouter([
             children: [
               { path: ROUTES.ADMIN, element: <Navigate to={ROUTES.ADMIN_DASHBOARD} replace /> },
               { path: ROUTES.ADMIN_DASHBOARD, element: <AdminDashboardPage /> },
-              { path: ROUTES.ADMIN_USERS, element: comingSoon },
-              { path: ROUTES.ADMIN_STAFF, element: comingSoon },
-              { path: ROUTES.ADMIN_ROLES, element: comingSoon },
+              { path: ROUTES.ADMIN_USERS, element: <UsersPage /> },
+              { path: ROUTES.ADMIN_STAFF, element: <StaffPage /> },
+              { path: ROUTES.ADMIN_ROLES, element: <RolesPage /> },
               { path: ROUTES.ADMIN_CATALOGS, element: comingSoon },
               { path: ROUTES.ADMIN_CLIENTS, element: comingSoon },
               { path: ROUTES.ADMIN_VEHICLES, element: comingSoon },

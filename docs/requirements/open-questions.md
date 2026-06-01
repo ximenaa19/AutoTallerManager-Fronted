@@ -403,4 +403,69 @@
 
 ---
 
+# Phase 4.1 — Admin Users, Staff, Roles (2026-05-31)
+
+## UserDto field list not in api-contract §10 prose
+
+**Status:** Resolved for frontend implementation (typed from CRUD index + backend DTO convention)
+
+**Related page/feature:** Admin → Users
+
+**Problem:** `GET /api/users` returns `UserDto` with only `userId`, `personId`, `isActive`, and `createdAt` — no email, name, or roles on the user record itself.
+
+**Frontend handling:** Users table shows person ID and joins active role labels from `GET /api/person-roles` + `GET /api/roles`. Display names/emails require a future persons lookup or enriched user endpoint.
+
+---
+
+## CreateUserRequest / UpdateUserRequest shapes
+
+**Status:** Resolved for frontend implementation (typed per api-contract §10 CRUD index convention)
+
+**Related page/feature:** Admin → Users create/edit modals
+
+**Confirmed fields:**
+
+- **Create:** `personId`, `password`, `isActive`
+- **Update:** `personId`, `newPassword?`, `isActive`
+
+**Note:** Full JSON examples are not yet written in `api-contract.md` §10 prose; types follow `Application/Features/Users/Requests/`.
+
+---
+
+## ReplaceMechanicSpecialtiesRequest body
+
+**Status:** Resolved for frontend implementation
+
+**Related page/feature:** Admin → Staff (mechanic specialties via registration); optional `PUT /api/mechanics/{personId}/specialties`
+
+**Confirmed body:** `{ specialtyIds?: number[] }`
+
+**Response:** `MechanicSpecialtySummaryDto[]` (`assignmentId`, `specialtyId`, `specialtyName`)
+
+**Note:** Request/response TypeScript blocks not yet added to `api-contract.md` §10; staff registration uses `RegisterStaffRequest.specialtyIds` instead.
+
+---
+
+## No staff list endpoint
+
+**Status:** Frontend decision (documented)
+
+**Related page/feature:** Admin → Staff
+
+**Resolution:** Staff page is registration-only (`POST /api/staff/register`). Existing staff accounts are managed from Users + Roles pages.
+
+---
+
+## PersonDto lacks email and phone in list response
+
+**Status:** Resolved for frontend implementation
+
+**Related page/feature:** Admin → Users person selector (`GET /api/persons`)
+
+**Problem:** `PersonDto` includes identity fields (name, document number, person ID) but not primary email or phone. Those live on related `PersonEmails` / `PersonPhones` entities.
+
+**Frontend handling:** Person selector displays full name, document number, and person ID. Email/phone are not shown until a future enriched persons lookup is documented.
+
+---
+
 *Last reviewed against backend: 2026-05-29. Update this file when backend or deployment config changes.*
