@@ -14,6 +14,8 @@ import { ComingSoonPage } from '@/pages/placeholders/ComingSoonPage';
 import { UsersPage } from '@/features/admin/pages/UsersPage';
 import { StaffPage } from '@/features/admin/pages/StaffPage';
 import { RolesPage } from '@/features/admin/pages/RolesPage';
+import { CatalogsHomePage } from '@/features/admin/catalogs/pages/CatalogsHomePage';
+import { CatalogDetailPage } from '@/features/admin/catalogs/pages/CatalogDetailPage';
 import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { PublicOnlyRoute } from '@/routes/PublicOnlyRoute';
 import { RoleGuard } from '@/routes/RoleGuard';
@@ -51,7 +53,8 @@ export const router = createBrowserRouter([
               { path: ROUTES.ADMIN_USERS, element: <UsersPage /> },
               { path: ROUTES.ADMIN_STAFF, element: <StaffPage /> },
               { path: ROUTES.ADMIN_ROLES, element: <RolesPage /> },
-              { path: ROUTES.ADMIN_CATALOGS, element: comingSoon },
+              { path: ROUTES.ADMIN_CATALOGS, element: <CatalogsHomePage /> },
+              { path: ROUTES.ADMIN_CATALOG_DETAIL, element: <CatalogDetailPage /> },
               { path: ROUTES.ADMIN_CLIENTS, element: comingSoon },
               { path: ROUTES.ADMIN_VEHICLES, element: comingSoon },
               { path: ROUTES.ADMIN_SERVICE_ORDERS, element: comingSoon },

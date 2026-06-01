@@ -468,4 +468,33 @@
 
 ---
 
+# Phase 4.2 — Admin Catalogs (2026-05-31)
+
+## Admin catalog CRUD request body fields not in api-contract §10 prose
+
+**Status:** Partial — read-only where create/update fields are undocumented
+
+**Related page/feature:** Admin → Catalogs (`/admin/catalogs`, `/admin/catalogs/:catalogKey`)
+
+**Problem:** `api-contract.md` §9 lists CRUD routes and `Create{Entity}Request` / `Update{Entity}Request` type names for all 20 admin catalog resources, but §10 does not document JSON field lists for most catalog create/update bodies (unlike `PersonDto` / `RegisterClientRequest` examples).
+
+**Frontend handling (Phase 4.2):**
+
+- **Full CRUD** enabled only for simple name-based catalogs where list response fields are typed using `MechanicSpecialtyDto` (`specialtyId`, `name`) as the confirmed exemplar plus api-contract FK naming (`genderId`, `serviceTypeId`, etc.): genders, street-types, vehicle-types, service-types, mechanic-specialties, order-statuses, part-categories, part-brands, payment-methods, payment-statuses, invoice-statuses, card-types, audit-action-types.
+- **Read-only** (GET list/display only; no create/edit/delete UI) for catalogs whose response or request shapes are not documented in §10 prose: document-types (`code` + `name`), email-domains (`domain`), vehicle-brands (`brandName`), vehicle-models (`brandId`, `modelName`), countries (`phoneCode`), departments, cities, neighborhoods (FK hierarchy).
+
+**Decision needed:** Add explicit `Create*/Update*` JSON field tables to `api-contract.md` §10 for read-only catalogs so the generic catalog form can enable writes safely.
+
+---
+
+## Catalog list response field names vs CatalogItemDto
+
+**Status:** Resolved for frontend implementation (admin CRUD uses entity DTOs, not aggregated catalogs)
+
+**Related page/feature:** Admin catalog detail tables
+
+**Note:** `GET /api/catalogs/public-registration` and `GET /api/catalogs/workshop` return `CatalogItemDto` (`id`, `name`). Admin CRUD endpoints return entity-specific DTOs with typed primary keys (e.g. `genderId`, `specialtyId`, `brandId`). The admin catalogs module uses entity DTO field names from the CRUD index and `MechanicSpecialtyDto`; validate against live API during QA.
+
+---
+
 *Last reviewed against backend: 2026-05-29. Update this file when backend or deployment config changes.*
