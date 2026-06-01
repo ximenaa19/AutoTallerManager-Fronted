@@ -1463,6 +1463,219 @@ All search endpoints require query parameter **`term`**.
 }
 ```
 
+**Success (200):** `InventoryPurchaseResultDto`
+
+**Adjust stock body (`AdjustStockRequest`):**
+
+```json
+{
+  "partId": 1,
+  "adjustmentQuantity": 5,
+  "reason": "Physical count correction"
+}
+```
+
+`adjustmentQuantity` must be non-zero (positive adds stock, negative removes). `changedByUserId` is taken from the JWT `userId` claim (not in request body).
+
+**Success (200):** `InventoryAdjustmentResultDto`
+
+**GET `/api/inventory/summary` success (200):** `InventorySummaryDto`
+
+**GET `/api/inventory/low-stock` success (200):** `LowStockPartDto[]` (parts where `stock <= minimumStock`)
+
+#### Parts (`/api/parts`)
+
+| Method | Route | Body | Response |
+|--------|-------|------|----------|
+| GET | `/api/parts` | — | `PartDto[]` |
+| GET | `/api/parts/{id}` | — | `PartDto` |
+| POST | `/api/parts` | `CreatePartRequest` | `PartDto` |
+| PUT | `/api/parts/{id}` | `UpdatePartRequest` | `PartDto` |
+| DELETE | `/api/parts/{id}` | — | 204 |
+
+**GET `/api/search/parts?term=`** — `PartSearchResultDto[]` (active search; min term length enforced server-side)
+
+#### Suppliers (`/api/suppliers`)
+
+| Method | Route | Body | Response |
+|--------|-------|------|----------|
+| GET | `/api/suppliers` | — | `SupplierDto[]` |
+| GET | `/api/suppliers/{id}` | — | `SupplierDto` |
+| POST | `/api/suppliers` | `CreateSupplierRequest` | `SupplierDto` |
+| PUT | `/api/suppliers/{id}` | `UpdateSupplierRequest` | `SupplierDto` |
+| DELETE | `/api/suppliers/{id}` | — | 204 |
+
+**GET `/api/search/suppliers?term=`** — `SupplierSearchResultDto[]`
+
+#### Part purchases (`/api/part-purchases`, `/api/part-purchase-details`)
+
+| Method | Route | Body | Response |
+|--------|-------|------|----------|
+| GET | `/api/part-purchases` | — | `PartPurchaseDto[]` |
+| GET | `/api/part-purchases/{id}` | — | `PartPurchaseDto` |
+| POST | `/api/part-purchases` | `CreatePartPurchaseRequest` | `PartPurchaseDto` |
+| PUT | `/api/part-purchases/{id}` | `UpdatePartPurchaseRequest` | `PartPurchaseDto` |
+| DELETE | `/api/part-purchases/{id}` | — | 204 |
+| GET | `/api/part-purchase-details` | — | `PartPurchaseDetailDto[]` |
+| GET | `/api/part-purchase-details/{id}` | — | `PartPurchaseDetailDto` |
+| POST | `/api/part-purchase-details` | `CreatePartPurchaseDetailRequest` | `PartPurchaseDetailDto` |
+| PUT | `/api/part-purchase-details/{id}` | `UpdatePartPurchaseDetailRequest` | `PartPurchaseDetailDto` |
+| DELETE | `/api/part-purchase-details/{id}` | — | 204 |
+
+**Note:** `POST /api/inventory/register-purchase` is the canonical single-transaction flow (header + lines + stock). The Admin **Register purchase** UI uses only this endpoint. CRUD routes below (`POST /api/part-purchases`, `POST /api/part-purchase-details`) remain available for other clients; purchase history in Admin uses GET/PUT/DELETE on those resources, not POST create for registration.
+
+`PartDto` / `PartSearchResultDto` do **not** include a separate `name` or `partName` field. Use **`description`** as the human-readable catalog label; **`code`** is the part code/SKU.
+
+**Part search display fields (`PartSearchResultDto`):** `partId`, `code`, `description`, `stock`, `minimumStock`, `unitPrice`, `isActive`.
+
+```ts
+export interface PartDto {
+  partId: number;
+  partCategoryId: number;
+  partBrandId?: number | null;
+  code: string;
+  description: string;
+  stock: number;
+  minimumStock: number;
+  unitPrice: number;
+  isActive: boolean;
+}
+
+export interface CreatePartRequest {
+  partCategoryId: number;
+  partBrandId?: number | null;
+  code?: string;
+  description?: string;
+  stock: number;
+  minimumStock: number;
+  unitPrice: number;
+  isActive?: boolean;
+}
+
+export interface UpdatePartRequest {
+  partCategoryId: number;
+  partBrandId?: number | null;
+  code?: string;
+  description?: string;
+  stock: number;
+  minimumStock: number;
+  unitPrice: number;
+  isActive: boolean;
+}
+
+export interface LowStockPartDto {
+  partId: number;
+  partCategoryId: number;
+  partBrandId?: number | null;
+  code: string;
+  description: string;
+  stock: number;
+  minimumStock: number;
+  unitPrice: number;
+  isActive: boolean;
+}
+
+export interface AdjustStockRequest {
+  partId: number;
+  adjustmentQuantity: number;
+  reason?: string;
+}
+
+export interface InventoryAdjustmentResultDto {
+  partId: number;
+  previousStock: number;
+  adjustmentQuantity: number;
+  newStock: number;
+  reason?: string;
+}
+
+export interface RegisterInventoryPurchaseDetailRequest {
+  partId: number;
+  quantity: number;
+  unitPrice: number;
+}
+
+export interface RegisterInventoryPurchaseRequest {
+  supplierId: number;
+  purchaseDate?: string;
+  details?: RegisterInventoryPurchaseDetailRequest[];
+}
+
+export interface InventoryPurchaseDetailResultDto {
+  partPurchaseDetailId: number;
+  partId: number;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+}
+
+export interface InventoryPurchaseResultDto {
+  partPurchaseId: number;
+  supplierId: number;
+  purchaseDate: string;
+  total: number;
+  details: InventoryPurchaseDetailResultDto[];
+}
+
+export interface SupplierDto {
+  supplierId: number;
+  name: string;
+  taxId?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  isActive: boolean;
+}
+
+export interface CreateSupplierRequest {
+  name?: string;
+  taxId?: string;
+  phone?: string;
+  email?: string;
+  isActive?: boolean;
+}
+
+export interface UpdateSupplierRequest {
+  name?: string;
+  taxId?: string;
+  phone?: string;
+  email?: string;
+  isActive: boolean;
+}
+
+export interface PartPurchaseDto {
+  partPurchaseId: number;
+  supplierId: number;
+  purchaseDate: string;
+  total: number;
+}
+
+export interface CreatePartPurchaseRequest {
+  supplierId: number;
+  purchaseDate?: string;
+}
+
+export interface UpdatePartPurchaseRequest {
+  supplierId: number;
+  purchaseDate: string;
+}
+
+export interface PartPurchaseDetailDto {
+  partPurchaseDetailId: number;
+  partPurchaseId: number;
+  partId: number;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+}
+
+export interface CreatePartPurchaseDetailRequest {
+  partPurchaseId: number;
+  partId: number;
+  quantity: number;
+  unitPrice: number;
+}
+```
+
 
 ---
 

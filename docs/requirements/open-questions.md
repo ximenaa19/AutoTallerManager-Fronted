@@ -605,4 +605,52 @@
 
 ---
 
-*Last reviewed against backend: 2026-05-31 (Phase 4.4.1). Update this file when backend or deployment config changes.*
+## POST /api/inventory/register-purchase — server 500 (EF Update on new purchase)
+
+**Status:** Resolved (2026-06-01)
+
+**Related page/feature:** Admin → Purchases → Register purchase
+
+**Confirmed in:** `InventoryBusinessService.RegisterPurchaseAsync` — after `AddAsync(purchase)`, the service previously called `purchaseRepository.Update(purchase)` while `PartPurchaseId` was still temporary, causing `System.InvalidOperationException` and HTTP 500.
+
+**Resolution:** Backend no longer calls `Update` on a newly inserted `PartPurchase` before EF Core assigns the real ID. Frontend uses only `POST /api/inventory/register-purchase` (temporary CRUD fallback removed).
+
+---
+
+## Part `name` / `partName` field
+
+**Status:** Resolved — not exposed (2026-06-01)
+
+**Related page/feature:** Admin → Purchases → Register purchase → part search
+
+**Confirmed in:** `PartDto`, `PartSearchResultDto`, `Part` entity — fields are `code` and `description` only.
+
+**Frontend handling:** UI treats **`description`** as the primary catalog label (title line). Secondary line shows `Code`, `Stock`, and `Unit price`. No `partName` is invented.
+
+---
+
+## POST /api/part-purchases (header-only create)
+
+**Status:** Resolved — not used for register flow (2026-06-01)
+
+**Related page/feature:** Admin → Purchases
+
+**Problem:** `CreatePartPurchaseRequest` only includes `supplierId` and `purchaseDate`. It does not create line items or update stock by itself.
+
+**Frontend handling:** Register purchase uses `POST /api/inventory/register-purchase` only. Standalone “create empty purchase” is not exposed in the UI. Purchase header edits use `PUT /api/part-purchases/{id}` (supplier and date only).
+
+---
+
+## Part purchase detail CRUD (standalone)
+
+**Status:** Deferred (2026-05-31, Phase 4.5)
+
+**Related page/feature:** Admin → Purchases → line item maintenance
+
+**Problem:** `POST/PUT/DELETE /api/part-purchase-details` are documented, but changing lines after registration may not match inventory/stock business rules. No explicit workflow contract for post-registration line edits.
+
+**Frontend handling:** Line items are read-only in the purchase detail modal (from `GET /api/part-purchase-details`). New lines are added only via **Register purchase**.
+
+---
+
+*Last reviewed against backend: 2026-05-31 (Phase 4.5). Update this file when backend or deployment config changes.*
