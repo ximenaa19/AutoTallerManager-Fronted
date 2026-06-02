@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pencil, Plus, Trash2, UserMinus, UserPlus, Wrench } from 'lucide-react';
+import { CheckCircle, Pencil, Plus, Trash2, UserMinus, UserPlus, Wrench, XCircle } from 'lucide-react';
 import { getErrorMessage } from '@/api/apiError';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -19,6 +19,13 @@ import {
   ORDER_STATUS_IDS,
   type ServiceOrderServiceSummaryDto,
 } from '@/features/admin/serviceOrders/types/serviceOrders.types';
+import {
+  buildUpdateOrderServiceRequestFromSummary,
+  getBillingApprovalBadgeLabel,
+  getBillingApprovalBadgeVariant,
+  getBillingApprovalStatus,
+  validateServiceForBillingApproval,
+} from '@/features/admin/serviceOrders/utils/orderServiceBilling';
 import { formatCurrency, formatDateTime } from '@/utils/format';
 
 export interface ServiceOrderServicesPanelProps {
@@ -54,6 +61,7 @@ export function ServiceOrderServicesPanel({
   const [workPerformed, setWorkPerformed] = useState('');
   const [laborCost, setLaborCost] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [approvingServiceId, setApprovingServiceId] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -138,7 +146,9 @@ export function ServiceOrderServicesPanel({
     orderStatusId === ORDER_STATUS_IDS.voided;
 
   const handleSaveService = async (
-    payload: Parameters<typeof orderServicesApi.create>[0],
+    payload: Parameters<typeof orderServicesApi.create>[0] | Parameters<
+      typeof orderServicesApi.update
+    >[1],
   ) => {
     if (serviceFormModal?.mode === 'edit') {
       await orderServicesApi.update(serviceFormModal.service.orderServiceId, payload);
@@ -148,6 +158,43 @@ export function ServiceOrderServicesPanel({
       setSuccessMessage('Service line added.');
     }
     onRefresh();
+  };
+
+  const handleBillingApproval = async (
+    service: ServiceOrderServiceSummaryDto,
+    customerApproved: boolean,
+  ) => {
+    if (customerApproved) {
+      const validationError = validateServiceForBillingApproval(service);
+      if (validationError) {
+        setActionError(validationError);
+        return;
+      }
+    }
+
+    setApprovingServiceId(service.orderServiceId);
+    setActionError(null);
+
+    try {
+      await orderServicesApi.update(
+        service.orderServiceId,
+        buildUpdateOrderServiceRequestFromSummary(
+          service,
+          serviceOrderId,
+          customerApproved,
+        ),
+      );
+      setSuccessMessage(
+        customerApproved
+          ? 'Service approved for billing.'
+          : 'Billing approval rejected.',
+      );
+      onRefresh();
+    } catch (err) {
+      setActionError(getErrorMessage(err));
+    } finally {
+      setApprovingServiceId(null);
+    }
   };
 
   const handleDeleteService = async () => {
@@ -175,6 +222,9 @@ export function ServiceOrderServicesPanel({
           <h2 className="text-base font-semibold text-text-primary">Services</h2>
           <p className="mt-1 text-sm text-text-secondary">
             Line items on this order. Add, edit, or remove services when the order is open.
+          </p>
+          <p className="mt-1 text-sm text-text-secondary">
+            Only approved billable services can be included in an invoice.
           </p>
         </div>
         <Button
@@ -214,7 +264,12 @@ export function ServiceOrderServicesPanel({
         <p className="mt-5 text-sm text-text-secondary">No services on this order yet.</p>
       ) : (
         <div className="mt-5 space-y-4">
-          {services.map((service) => (
+          {services.map((service) => {
+            const billingStatus = getBillingApprovalStatus(service.customerApproved);
+            const approvalValidationError = validateServiceForBillingApproval(service);
+            const isApproving = approvingServiceId === service.orderServiceId;
+
+            return (
             <article
               key={service.orderServiceId}
               className="rounded-lg border border-border bg-bg-muted/20 p-4"
@@ -226,11 +281,9 @@ export function ServiceOrderServicesPanel({
                       {formatServiceTypeLabel(service.serviceTypeId, lookups)}
                     </h3>
                     <span className="text-xs text-text-muted">#{service.orderServiceId}</span>
-                    {service.customerApproved !== undefined && (
-                      <Badge variant={service.customerApproved ? 'active' : 'pending'}>
-                        {service.customerApproved ? 'Client approved' : 'Pending approval'}
-                      </Badge>
-                    )}
+                    <Badge variant={getBillingApprovalBadgeVariant(billingStatus)}>
+                      {getBillingApprovalBadgeLabel(billingStatus)}
+                    </Badge>
                   </div>
                   {service.description && (
                     <p className="mt-1 text-sm text-text-secondary">{service.description}</p>
@@ -238,15 +291,23 @@ export function ServiceOrderServicesPanel({
                   <p className="mt-2 text-sm font-medium text-text-primary">
                     Labor: {formatCurrency(service.laborCost)}
                   </p>
+                  {service.laborCost === 0 && (
+                    <p className="mt-1 text-xs text-warning">
+                      Labor cost is zero — this service may not generate a meaningful invoice
+                      line.
+                    </p>
+                  )}
                   {service.workPerformed && editingServiceId !== service.orderServiceId && (
                     <p className="mt-2 text-sm text-text-secondary">
                       <span className="font-medium text-text-primary">Work performed:</span>{' '}
                       {service.workPerformed}
                     </p>
                   )}
-                  {service.approvalDate && (
+                  {service.approvalDate &&
+                    (billingStatus === 'approved' || billingStatus === 'rejected') && (
                     <p className="mt-1 text-xs text-text-muted">
-                      Approved {formatDateTime(service.approvalDate)}
+                      {billingStatus === 'approved' ? 'Approved' : 'Rejected'}{' '}
+                      {formatDateTime(service.approvalDate)}
                     </p>
                   )}
                 </div>
@@ -308,6 +369,30 @@ export function ServiceOrderServicesPanel({
                   >
                     Request part
                   </Button>
+                  {!orderIsLocked && billingStatus !== 'approved' && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      leftIcon={<CheckCircle className="size-4" />}
+                      disabled={Boolean(approvalValidationError)}
+                      title={approvalValidationError ?? undefined}
+                      isLoading={isApproving}
+                      onClick={() => void handleBillingApproval(service, true)}
+                    >
+                      Approve for billing
+                    </Button>
+                  )}
+                  {!orderIsLocked && billingStatus !== 'rejected' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      leftIcon={<XCircle className="size-4 text-danger" />}
+                      disabled={isApproving}
+                      onClick={() => void handleBillingApproval(service, false)}
+                    >
+                      Reject billing approval
+                    </Button>
+                  )}
                 </div>
               </div>
 
@@ -390,7 +475,8 @@ export function ServiceOrderServicesPanel({
                 </div>
               )}
             </article>
-          ))}
+            );
+          })}
         </div>
       )}
 

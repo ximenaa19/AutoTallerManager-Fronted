@@ -24,6 +24,9 @@ import { ServiceOrdersPage } from '@/features/admin/serviceOrders/pages/ServiceO
 import { ServiceOrderDetailPage } from '@/features/admin/serviceOrders/pages/ServiceOrderDetailPage';
 import { InventoryPage } from '@/features/admin/inventory/pages/InventoryPage';
 import { PurchasesPage } from '@/features/admin/inventory/pages/PurchasesPage';
+import { InvoicingPage } from '@/features/admin/billing/pages/InvoicingPage';
+import { InvoiceDetailPage } from '@/features/admin/billing/pages/InvoiceDetailPage';
+import { PaymentsPage } from '@/features/admin/billing/pages/PaymentsPage';
 import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { PublicOnlyRoute } from '@/routes/PublicOnlyRoute';
 import { RoleGuard } from '@/routes/RoleGuard';
@@ -72,8 +75,9 @@ export const router = createBrowserRouter([
               { path: ROUTES.ADMIN_MECHANICS, element: comingSoon },
               { path: ROUTES.ADMIN_INVENTORY, element: <InventoryPage /> },
               { path: ROUTES.ADMIN_PURCHASES, element: <PurchasesPage /> },
-              { path: ROUTES.ADMIN_INVOICES, element: comingSoon },
-              { path: ROUTES.ADMIN_PAYMENTS, element: comingSoon },
+              { path: ROUTES.ADMIN_INVOICES, element: <InvoicingPage /> },
+              { path: ROUTES.ADMIN_INVOICE_DETAIL, element: <InvoiceDetailPage /> },
+              { path: ROUTES.ADMIN_PAYMENTS, element: <PaymentsPage /> },
               { path: ROUTES.ADMIN_REPORTS, element: comingSoon },
               { path: ROUTES.ADMIN_AUDIT, element: comingSoon },
               { path: ROUTES.ADMIN_SETTINGS, element: comingSoon },

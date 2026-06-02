@@ -1240,6 +1240,10 @@ All search endpoints require query parameter **`term`**.
 
 **Source:** `Api/Controllers/SearchController.cs`
 
+**Term validation:** `term` is required and must be at least **2 characters** (`SearchErrors.SearchTermRequired`, `SearchErrors.SearchTermTooShort`).
+
+**Service order search (`GET /api/search/service-orders?term=`):** Matches `serviceOrderId`, `vehicleId`, and `generalDescription` (case-insensitive substring). Response: `ServiceOrderSearchResultDto` — does **not** include client name, VIN, or vehicle model. **`term` must be at least 2 characters** (same rule as all search routes); single-digit order or vehicle IDs cannot be matched by ID alone — use description or a longer numeric substring (e.g. order `12` matches term `12`).
+
 ---
 
 ### Workshop intake
@@ -1404,7 +1408,7 @@ All search endpoints require query parameter **`term`**.
 | POST | `/api/invoices/generate-from-service-order/{serviceOrderId}` | Admin, Receptionist | Body: `{ invoiceNumber?, invoiceStatusId?, tax?, observations? }` — **409** if order already has invoice (`InvoiceBusiness.ServiceOrderAlreadyHasInvoiceConflict`) |
 | POST | `/api/invoices/{id}/recalculate` | Admin, Receptionist | Recalculate totals |
 | POST | `/api/invoices/{id}/issue` | Admin, Receptionist | Issue draft invoice |
-| POST | `/api/invoices/{id}/cancel` | Admin | Body: `{ reason }` |
+| POST | `/api/invoices/{id}/cancel` | Admin | Body: `{ reason }` — **reason required** (non-empty) |
 
 **Source:** `Api/Controllers/InvoiceBusinessController.cs`
 
@@ -1416,7 +1420,7 @@ All search endpoints require query parameter **`term`**.
 |--------|-------|------|-------------|
 | POST | `/api/invoices/{id}/record-payment` | Admin, Receptionist | Record payment against invoice |
 | GET | `/api/invoices/{id}/payment-summary` | Admin, Receptionist, Client | Payment summary (Client: own invoices only) |
-| POST | `/api/payments/{id}/refund` | Admin | Refund completed payment |
+| POST | `/api/payments/{id}/refund` | Admin | Refund completed payment — **no request body**; returns `RecordedPaymentDto` |
 
 **Source:** `Api/Controllers/PaymentBusinessController.cs`
 
@@ -2413,6 +2417,16 @@ export interface InventorySummaryDto {
   estimatedInventoryValue: number;
 }
 
+export interface GeneratedInvoiceDetailDto {
+  invoiceDetailId: number;
+  sourcePartId?: number;
+  concept: string;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+  lineType: string;
+}
+
 export interface GeneratedInvoiceDto {
   invoiceId: number;
   invoiceNumber: string;
@@ -2423,6 +2437,91 @@ export interface GeneratedInvoiceDto {
   tax: number;
   total: number;
   observations?: string;
+  details?: GeneratedInvoiceDetailDto[];
+}
+
+export interface InvoiceDto {
+  invoiceId: number;
+  invoiceNumber: string;
+  serviceOrderId: number;
+  invoiceStatusId: number;
+  invoiceDate: string;
+  subtotal: number;
+  tax: number;
+  total: number;
+  observations?: string;
+}
+
+export interface CreateInvoiceRequest {
+  invoiceNumber?: string;
+  serviceOrderId: number;
+  invoiceStatusId: number;
+  invoiceDate?: string;
+  tax: number;
+  observations?: string;
+}
+
+export interface UpdateInvoiceRequest {
+  invoiceNumber?: string;
+  serviceOrderId: number;
+  invoiceStatusId: number;
+  invoiceDate: string;
+  tax: number;
+  observations?: string;
+}
+
+export interface CancelInvoiceRequest {
+  reason?: string;
+}
+
+export interface InvoiceBusinessResultDto {
+  invoiceId: number;
+  action: string;
+  success: boolean;
+  subtotal: number;
+  tax: number;
+  total: number;
+}
+
+export interface InvoiceDetailDto {
+  invoiceDetailId: number;
+  invoiceId: number;
+  sourcePartId?: number;
+  concept: string;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+  lineType: string;
+}
+
+export interface PaymentDto {
+  paymentId: number;
+  invoiceId: number;
+  paymentMethodId: number;
+  paymentStatusId: number;
+  paymentDate: string;
+  amount: number;
+  reference?: string;
+}
+
+export interface PaymentCardDto {
+  paymentCardId: number;
+  paymentId: number;
+  cardTypeId: number;
+  lastFourDigits: string;
+  cardHolder: string;
+  authorizationCode?: string;
+}
+
+export interface RecordedPaymentDto {
+  paymentId: number;
+  invoiceId: number;
+  paymentMethodId: number;
+  paymentStatusId: number;
+  paymentDate: string;
+  amount: number;
+  reference?: string;
+  paymentCardId?: number;
 }
 ```
 

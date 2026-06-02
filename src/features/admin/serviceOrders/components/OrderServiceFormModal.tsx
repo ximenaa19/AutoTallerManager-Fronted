@@ -11,6 +11,7 @@ import type {
   UpdateOrderServiceRequest,
 } from '@/features/admin/serviceOrders/types/orderServices.types';
 import type { ServiceOrderServiceSummaryDto } from '@/features/admin/serviceOrders/types/serviceOrders.types';
+import { buildEditUpdateOrderServiceRequest } from '@/features/admin/serviceOrders/utils/orderServiceBilling';
 
 export interface OrderServiceFormModalProps {
   open: boolean;
@@ -81,15 +82,22 @@ export function OrderServiceFormModal({
     setFieldError(null);
     setIsSubmitting(true);
 
-    const base = {
-      serviceOrderId,
+    const formFields = {
       serviceTypeId: parsedTypeId,
       description: description.trim() || undefined,
       laborCost: parsedLabor,
     };
 
+    const payload: CreateOrderServiceRequest | UpdateOrderServiceRequest =
+      mode === 'edit' && initialService
+        ? buildEditUpdateOrderServiceRequest(initialService, serviceOrderId, formFields)
+        : {
+            serviceOrderId,
+            ...formFields,
+          };
+
     try {
-      await onSubmit(base);
+      await onSubmit(payload);
       onClose();
     } catch (err) {
       setApiError(getErrorMessage(err));

@@ -653,4 +653,76 @@
 
 ---
 
-*Last reviewed against backend: 2026-05-31 (Phase 4.5). Update this file when backend or deployment config changes.*
+# Phase 4.6 — Admin Invoicing and Payments (2026-06-01)
+
+## InvoiceDto / PaymentDto / InvoiceDetailDto field lists
+
+**Status:** Resolved from backend (2026-06-01)
+
+**Related page/feature:** Admin → Invoicing, Payments, Invoice detail
+
+**Confirmed in:** `Application/Features/Invoices/Dtos/InvoiceDto.cs`, `Payments/Dtos/PaymentDto.cs`, `InvoiceDetails/Dtos/InvoiceDetailDto.cs`, request types under `.../Requests/`
+
+**Resolution:** Documented in `api-contract.md` §10 (GeneratedInvoiceDto block extended with InvoiceDto, PaymentDto, InvoiceDetailDto, business result types).
+
+**Frontend handling:** Admin Invoicing list uses `GET /api/invoices`; detail page filters `GET /api/invoice-details` client-side by `invoiceId`. Payment summary via `GET /api/invoices/{id}/payment-summary`.
+
+---
+
+## Manual invoice create/edit UI
+
+**Status:** Deferred — API confirmed, UI not exposed (2026-06-01)
+
+**Related page/feature:** Admin → Invoicing → manual CRUD
+
+**Problem:** `CreateInvoiceRequest` / `UpdateInvoiceRequest` bodies are confirmed in backend, but primary workflow is generate-from-service-order. Manual header CRUD is not exposed in Admin UI to avoid conflicting with business rules.
+
+**Frontend handling:** Generate, recalculate, issue, cancel, delete (draft only), and record payment are implemented. Manual create/edit forms remain deferred.
+
+---
+
+## Invoice details list filtering
+
+**Status:** Resolved — client-side filter (2026-06-01)
+
+**Related page/feature:** Admin → Invoice detail → line items
+
+**Problem:** `GET /api/invoice-details` returns all details; no `invoiceId` query filter on controller.
+
+**Frontend handling:** Fetch full list and filter by `invoiceId` on the client. Documented here; acceptable per no server pagination policy.
+
+---
+
+## Service order search DTO for Generate Invoice modal
+
+**Status:** Resolved from backend (2026-06-01)
+
+**Related page/feature:** Admin → Invoicing → Generate invoice from service order
+
+**Confirmed in:** `Application/Features/Search/Dtos/ServiceOrderSearchResultDto.cs`, `SearchService.SearchServiceOrdersAsync`
+
+**Searchable backend fields:** `serviceOrderId`, `vehicleId`, `generalDescription` (term min length 2).
+
+**Search limitations:** Client/customer name, VIN, and vehicle model are **not** searchable. Single-digit order or vehicle IDs cannot be matched by ID alone because `term` must be at least 2 characters; use description or a multi-digit ID substring instead.
+
+**Response DTO fields:** `serviceOrderId`, `vehicleId`, `orderStatusId`, `entryDate`, `generalDescription`.
+
+**Not searchable / not returned:** customer/client name, VIN, vehicle model label. UI copy and placeholder use order ID, vehicle ID, and description only.
+
+**Frontend handling:** Modal uses `GET /api/search/service-orders?term=` with normalized input (strips decorative `#`, `Order`, `Vehicle` prefixes), explicit helper/loading/empty/error/result states, and footer validation messages for disabled Generate.
+
+---
+
+## Invoice list paid/pending amounts in search
+
+**Status:** Resolved — not on list DTO (2026-06-01)
+
+**Related page/feature:** Admin → Invoicing list search
+
+**Problem:** Paid and pending amounts are not fields on `InvoiceDto`; they exist only on `GET /api/invoices/{id}/payment-summary`.
+
+**Frontend handling:** List search covers invoice ID, number, service order ID, status, date, subtotal, tax, total, and observations. Placeholder does not mention paid/pending.
+
+---
+
+*Last reviewed against backend: 2026-06-01 (Phase 4.6). Update this file when backend or deployment config changes.*
