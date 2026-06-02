@@ -1,11 +1,15 @@
-import { Bell, HelpCircle, Menu, Search } from 'lucide-react';
+import { Bell, HelpCircle, Menu } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
+import { TopbarPopoverButton } from '@/components/layout/TopbarPopoverButton';
+import { TopbarQuickSearch } from '@/components/layout/TopbarQuickSearch';
 import { UserMenu } from '@/components/layout/UserMenu';
 import { cn } from '@/lib/cn';
+import type { AppRole } from '@/types/auth.types';
 
 export interface TopbarProps {
   pageTitle: string;
   roleLabel?: string;
+  activeRole: AppRole | null;
   onMenuClick: () => void;
   className?: string;
 }
@@ -13,6 +17,7 @@ export interface TopbarProps {
 export function Topbar({
   pageTitle,
   roleLabel,
+  activeRole,
   onMenuClick,
   className,
 }: TopbarProps) {
@@ -49,42 +54,47 @@ export function Topbar({
       </div>
 
       <div className="relative hidden max-w-md flex-1 px-4 md:block">
-        <label className="relative block">
-          <span className="sr-only">Search</span>
-          <Search
-            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-text-muted"
-            aria-hidden
-          />
-          <input
-            type="search"
-            disabled
-            placeholder="Search… (coming in a future phase)"
-            className="w-full rounded-full border border-border bg-bg-input py-2 pr-4 pl-10 text-sm text-text-secondary placeholder:text-text-muted disabled:cursor-not-allowed disabled:opacity-70"
-          />
-        </label>
+        <TopbarQuickSearch activeRole={activeRole} />
       </div>
 
       <div className="relative flex items-center gap-2 sm:gap-3">
-        <button
-          type="button"
-          disabled
-          aria-label="Notifications (not available yet)"
-          title="Notifications are not available yet"
-          className="relative inline-flex size-10 items-center justify-center rounded-lg border border-border text-text-secondary opacity-60"
+        <TopbarPopoverButton
+          icon={<Bell className="size-5" aria-hidden />}
+          label="Notifications"
         >
-          <Bell className="size-5" />
-          <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-accent" />
-        </button>
+          <p className="text-sm font-medium text-text-primary">Notifications</p>
+          <p className="mt-2 text-sm text-text-secondary">
+            Notifications are pending backend support.
+          </p>
+        </TopbarPopoverButton>
 
-        <button
-          type="button"
-          disabled
-          aria-label="Help (coming soon)"
-          title="Help center coming soon"
-          className="hidden size-10 items-center justify-center rounded-lg border border-border text-text-secondary opacity-60 sm:inline-flex"
+        <TopbarPopoverButton
+          icon={<HelpCircle className="size-5" aria-hidden />}
+          label="Help"
+          className="hidden sm:block"
         >
-          <HelpCircle className="size-5" />
-        </button>
+          <p className="text-sm font-medium text-text-primary">Help</p>
+          <dl className="mt-3 space-y-2 text-sm text-text-secondary">
+            <div>
+              <dt className="font-medium text-text-primary">Current role</dt>
+              <dd>{roleLabel ?? 'Not selected'}</dd>
+            </div>
+            <div>
+              <dt className="font-medium text-text-primary">Quick navigation</dt>
+              <dd>
+                Use the search field to jump to modules available for your role.
+              </dd>
+            </div>
+            <div>
+              <dt className="font-medium text-text-primary">Sidebar</dt>
+              <dd>Use the sidebar to access modules and dashboards.</dd>
+            </div>
+            <div>
+              <dt className="font-medium text-text-primary">Support</dt>
+              <dd>Contact your system administrator for access or account issues.</dd>
+            </div>
+          </dl>
+        </TopbarPopoverButton>
 
         {roleLabel && (
           <Badge variant="accent" className="hidden md:inline-flex">

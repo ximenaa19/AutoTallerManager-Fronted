@@ -5,7 +5,7 @@ export function ClientPlaceholderPage() {
     <RolePlaceholderPage
       roleLabel="Client"
       title="Client Dashboard"
-      description="Your vehicles, orders, and invoices overview will be available in Phase 3."
+      description="Your vehicles, orders, and invoices overview will be available in a future release."
     />
   );
 }

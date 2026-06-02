@@ -4,8 +4,8 @@ import { PrivateLayout } from '@/components/layout/PrivateLayout';
 import { SelectRolePage } from '@/features/auth/pages/SelectRolePage';
 import { LoginPage } from '@/features/auth/pages/LoginPage';
 import { RegisterClientPage } from '@/features/auth/pages/RegisterClientPage';
-import { AccountProfilePlaceholderPage } from '@/pages/account/AccountProfilePlaceholderPage';
-import { ChangePasswordPlaceholderPage } from '@/pages/account/ChangePasswordPlaceholderPage';
+import { AccountProfilePage } from '@/features/account/pages/AccountProfilePage';
+import { ChangePasswordPage } from '@/features/account/pages/ChangePasswordPage';
 import { AdminDashboardPage } from '@/pages/dashboards/AdminDashboardPage';
 import { ClientDashboardPage } from '@/pages/dashboards/ClientDashboardPage';
 import { MechanicDashboardPage } from '@/pages/dashboards/MechanicDashboardPage';
@@ -142,11 +142,11 @@ export const router = createBrowserRouter([
           },
           {
             path: ROUTES.ACCOUNT_PROFILE,
-            element: <AccountProfilePlaceholderPage />,
+            element: <AccountProfilePage />,
           },
           {
             path: ROUTES.ACCOUNT_CHANGE_PASSWORD,
-            element: <ChangePasswordPlaceholderPage />,
+            element: <ChangePasswordPage />,
           },
         ],
       },

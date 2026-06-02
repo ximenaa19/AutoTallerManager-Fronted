@@ -412,4 +412,64 @@ export function getComingSoonNavItem(
   });
 }
 
+export interface QuickNavItem {
+  id: string;
+  label: string;
+  path: string;
+  keywords?: string[];
+}
+
+const ACCOUNT_QUICK_NAV: QuickNavItem[] = [
+  {
+    id: 'account-profile',
+    label: 'My Profile',
+    path: ROUTES.ACCOUNT_PROFILE,
+    keywords: ['account', 'profile', 'me'],
+  },
+  {
+    id: 'account-change-password',
+    label: 'Change Password',
+    path: ROUTES.ACCOUNT_CHANGE_PASSWORD,
+    keywords: ['password', 'security', 'credentials'],
+  },
+];
+
+export function getQuickNavItems(role: AppRole | null): QuickNavItem[] {
+  const roleItems: QuickNavItem[] = getNavigationForRole(role).map((item) => ({
+    id: item.id,
+    label: item.label,
+    path: item.path,
+    keywords: item.description ? [item.description] : undefined,
+  }));
+
+  const accountItems = ACCOUNT_QUICK_NAV.filter(
+    (item) => !roleItems.some((roleItem) => roleItem.path === item.path),
+  );
+
+  return [...roleItems, ...accountItems];
+}
+
+export function searchQuickNavItems(
+  items: QuickNavItem[],
+  query: string,
+  limit = 8,
+): QuickNavItem[] {
+  const normalizedQuery = query.trim().toLowerCase();
+
+  if (!normalizedQuery) {
+    return items.slice(0, limit);
+  }
+
+  const terms = normalizedQuery.split(/\s+/).filter(Boolean);
+
+  return items
+    .filter((item) => {
+      const haystack = [item.label, ...(item.keywords ?? [])]
+        .join(' ')
+        .toLowerCase();
+      return terms.every((term) => haystack.includes(term));
+    })
+    .slice(0, limit);
+}
+
 export { ADMIN_NAV, RECEPTIONIST_NAV, MECHANIC_NAV, CLIENT_NAV };

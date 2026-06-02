@@ -46,6 +46,7 @@ export function PrivateLayout() {
         <Topbar
           pageTitle={pageTitle}
           roleLabel={roleLabel}
+          activeRole={activeRole}
           onMenuClick={() => setMobileSidebarOpen(true)}
         />
       }

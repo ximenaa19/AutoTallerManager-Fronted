@@ -31,11 +31,10 @@ export function RolePlaceholderPage({
           <div className="mb-2 flex size-11 items-center justify-center rounded-lg bg-warning-muted text-warning">
             <Construction className="size-5" aria-hidden />
           </div>
-          <CardTitle>Dashboard coming in Phase 3</CardTitle>
+          <CardTitle>Module not available yet</CardTitle>
           <CardDescription>
-            This is a safe placeholder landing page. The real {roleLabel.toLowerCase()}{' '}
-            dashboard, navigation, and operational modules will be implemented in
-            Phase 3.
+            This is a placeholder landing page. The real {roleLabel.toLowerCase()}{' '}
+            dashboard and operational modules are still being implemented.
           </CardDescription>
         </CardHeader>
         {children}

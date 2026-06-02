@@ -5,7 +5,7 @@ export function ReceptionistPlaceholderPage() {
     <RolePlaceholderPage
       roleLabel="Receptionist"
       title="Reception Dashboard"
-      description="Daily workshop operations overview will be available in Phase 3."
+      description="Daily workshop operations overview will be available in a future release."
     />
   );
 }

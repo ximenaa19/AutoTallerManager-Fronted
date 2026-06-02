@@ -76,3 +76,11 @@ export function getErrorMessage(error: unknown): string {
 
   return 'Something went wrong. Please try again.';
 }
+
+export function formatApiErrorDetail(error: unknown): string {
+  if (isApiError(error)) {
+    return `[${error.code}] ${error.message}`;
+  }
+
+  return getErrorMessage(error);
+}

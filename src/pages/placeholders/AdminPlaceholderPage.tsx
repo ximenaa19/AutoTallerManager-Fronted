@@ -5,7 +5,7 @@ export function AdminPlaceholderPage() {
     <RolePlaceholderPage
       roleLabel="Admin"
       title="Administrative Dashboard"
-      description="General summary of workshop operations will appear here once Phase 3 is complete."
+      description="General summary of workshop operations will appear here once the dashboard is complete."
     />
   );
 }

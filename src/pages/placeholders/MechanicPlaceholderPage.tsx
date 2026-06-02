@@ -5,7 +5,7 @@ export function MechanicPlaceholderPage() {
     <RolePlaceholderPage
       roleLabel="Mechanic"
       title="Mechanic Dashboard"
-      description="Assigned services and active orders summary will be implemented in Phase 3."
+      description="Assigned services and active orders summary will be implemented in a future release."
     />
   );
 }
