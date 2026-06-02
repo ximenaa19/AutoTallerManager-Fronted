@@ -7,7 +7,6 @@ import {
   Package,
   Receipt,
 } from 'lucide-react';
-import { dashboardApi } from '@/api/dashboard.api';
 import { DashboardGrid } from '@/components/dashboard/DashboardGrid';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { DashboardSection } from '@/components/dashboard/DashboardSection';
@@ -18,12 +17,13 @@ import { ErrorState } from '@/components/feedback/ErrorState';
 import { LoadingState } from '@/components/feedback/LoadingState';
 import { Badge } from '@/components/ui/Badge';
 import { useAsyncRequest } from '@/hooks/useAsyncRequest';
+import { receptionistDashboardApi } from '@/features/receptionist/api/receptionistDashboard.api';
 import { ROUTES } from '@/routes/routePaths';
 import { formatNumber } from '@/utils/format';
 
 export function ReceptionistDashboardPage() {
   const { data, isLoading, error, retry } = useAsyncRequest(
-    () => dashboardApi.getReceptionistDashboard(),
+    () => receptionistDashboardApi.getReceptionistDashboard(),
     [],
   );
 

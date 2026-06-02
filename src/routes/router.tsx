@@ -9,7 +9,7 @@ import { ChangePasswordPage } from '@/features/account/pages/ChangePasswordPage'
 import { AdminDashboardPage } from '@/pages/dashboards/AdminDashboardPage';
 import { ClientDashboardPage } from '@/pages/dashboards/ClientDashboardPage';
 import { MechanicDashboardPage } from '@/pages/dashboards/MechanicDashboardPage';
-import { ReceptionistDashboardPage } from '@/pages/dashboards/ReceptionistDashboardPage';
+import { ReceptionistDashboardPage } from '@/features/receptionist/pages/ReceptionistDashboardPage';
 import { ComingSoonPage } from '@/pages/placeholders/ComingSoonPage';
 import { UsersPage } from '@/features/admin/pages/UsersPage';
 import { StaffPage } from '@/features/admin/pages/StaffPage';
