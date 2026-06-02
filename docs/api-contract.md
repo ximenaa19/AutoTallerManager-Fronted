@@ -1,6 +1,6 @@
 # AutoTallerManager API Contract
 
-> **Document review:** 2026-05-29 (open-questions pass). DTO shapes in Section 10 and ownership/error codes were re-verified against `AutoTallerManager-Backend` Application layer source. Section 8 auth roles were re-verified against controller source.
+> **Document review:** 2026-06-02 (vehicle plate pass). Vehicle `plate` field, validation rules, and affected request/response DTOs were re-verified against `AutoTallerManager-Backend` Application layer source (`VehicleService.cs`, `ClientVehicleFlowService.cs`, `SearchService.cs`, `ServiceOrderWorkflowService.cs`).
 
 ## 1. Purpose of This Document
 
@@ -817,11 +817,13 @@ Returns all persons as `PersonDto[]`.
 | vehicleId | int | PK |
 | modelId | int | FK → VehicleModel |
 | vehicleTypeId | int | FK → VehicleType |
+| plate | string | Required; trim + uppercase; 5–10 chars; `^[A-Z0-9]+(?:-[A-Z0-9]+)*$`; unique among active vehicles |
 | vin | string | Exactly 17 alphanumeric characters (normalized uppercase) |
 | year | int | 1900 … current UTC year + 1 |
 | color | string? | Max 30 chars |
 | mileage | int | ≥ 0 |
 | isActive | bool | |
+| createdAt | string (ISO date-time)? | Present on list/get responses |
 
 **Create body (`CreateVehicleRequest`) / Update body (`UpdateVehicleRequest`):**
 
@@ -829,11 +831,22 @@ Returns all persons as `PersonDto[]`.
 |-------|------|----------|------------|
 | modelId | int | Yes | > 0; model must exist |
 | vehicleTypeId | int | Yes | > 0; type must exist |
+| plate | string | Yes | Trimmed; uppercase; 5–10 chars; letters, digits, optional hyphens; unique among active vehicles |
 | vin | string | Yes | Trimmed; uppercase; exactly 17 letters/digits; unique |
 | year | int | Yes | 1900 … current UTC year + 1 |
 | color | string? | No | Max 30 chars |
 | mileage | int | Yes | ≥ 0 |
 | isActive | bool | Yes | |
+
+**Plate validation (shared by vehicle CRUD and client vehicle flows):**
+
+| Rule | Value |
+|------|-------|
+| Normalization | Trim + uppercase |
+| Min length | 5 |
+| Max length | 10 |
+| Pattern | `^[A-Z0-9]+(?:-[A-Z0-9]+)*$` |
+| Uniqueness | Among **active** vehicles only |
 
 **Example create request:**
 
@@ -841,6 +854,7 @@ Returns all persons as `PersonDto[]`.
 {
   "modelId": 1,
   "vehicleTypeId": 1,
+  "plate": "ABC123",
   "vin": "1HGBH41JXMN109186",
   "year": 2020,
   "color": "Silver",
@@ -849,7 +863,7 @@ Returns all persons as `PersonDto[]`.
 }
 ```
 
-**Possible errors:** 404 NotFound; 400 validation (modelId, vehicleTypeId, vin, year, color, mileage); 404 ModelNotFound / VehicleTypeNotFound; 409 VinAlreadyExists; 409 InUse on delete when owner history or service orders reference the vehicle.
+**Possible errors:** 404 NotFound; 400 validation (modelId, vehicleTypeId, plate, vin, year, color, mileage); 404 ModelNotFound / VehicleTypeNotFound; 409 VinAlreadyExists; 409 `Vehicles.PlateAlreadyExists`; 400 `Vehicles.PlateRequired`; 400 `Vehicles.PlateInvalid`; 409 InUse on delete when owner history or service orders reference the vehicle.
 
 **Transfer ownership** (unchanged): `POST /api/vehicles/{vehicleId}/transfer-ownership` — see Client vehicles section.
 
@@ -1242,7 +1256,9 @@ All search endpoints require query parameter **`term`**.
 
 **Term validation:** `term` is required and must be at least **2 characters** (`SearchErrors.SearchTermRequired`, `SearchErrors.SearchTermTooShort`).
 
-**Service order search (`GET /api/search/service-orders?term=`):** Matches `serviceOrderId`, `vehicleId`, and `generalDescription` (case-insensitive substring). Response: `ServiceOrderSearchResultDto` — does **not** include client name, VIN, or vehicle model. **`term` must be at least 2 characters** (same rule as all search routes); single-digit order or vehicle IDs cannot be matched by ID alone — use description or a longer numeric substring (e.g. order `12` matches term `12`).
+**Vehicle search (`GET /api/search/vehicles?term=`):** Matches `vehicleId`, `plate`, `vin`, `color`, and string forms of `year` (case-insensitive substring). Response: `VehicleSearchResultDto` includes `plate`.
+
+**Service order search (`GET /api/search/service-orders?term=`):** Matches `serviceOrderId`, `vehicleId`, and `generalDescription` (case-insensitive substring). Response: `ServiceOrderSearchResultDto` — does **not** include client name, VIN, plate, or vehicle model. **`term` must be at least 2 characters** (same rule as all search routes); single-digit order or vehicle IDs cannot be matched by ID alone — use description or a longer numeric substring (e.g. order `12` matches term `12`).
 
 ---
 
@@ -1285,9 +1301,11 @@ All search endpoints require query parameter **`term`**.
 
 **Source:** `Api/Controllers/ReceptionistClientController.cs`
 
-**Request body:** `CreateClientWithVehicleRequest` (person fields + vehicle: modelId, vehicleTypeId, vin, year, color?, mileage)
+**Request body:** `CreateClientWithVehicleRequest` (person fields + vehicle: modelId, vehicleTypeId, **plate**, vin, year, color?, mileage)
 
-**Success (200):** `ClientWithVehicleDto`
+**Success (200):** `ClientWithVehicleDto` (includes `plate`)
+
+**Plate errors (client flows):** 400 `ClientVehicleFlows.PlateRequired`; 400 `ClientVehicleFlows.PlateInvalid`; 409 `ClientVehicleFlows.PlateAlreadyExists`
 
 ---
 
@@ -1306,6 +1324,27 @@ All search endpoints require query parameter **`term`**.
 **Source:** `Api/Controllers/ClientVehiclesController.cs`
 
 **Client invoice detail:** Clients **cannot** call `GET /api/invoices/{id}` (`InvoicesController` — Admin, Receptionist only). Use `GET /api/client/my-invoices` for list/summary fields and `GET /api/invoices/{id}/payment-summary` for payment breakdown (ownership enforced).
+
+#### POST /api/clients/{personId}/vehicles
+
+**Auth:** Admin, Receptionist  
+**Source:** `Api/Controllers/ClientVehiclesController.cs`, `Application/Features/ClientVehicleFlows/Requests/AddVehicleToClientRequest.cs`
+
+**Request body (`AddVehicleToClientRequest`):**
+
+| Field | Type | Required | Validation |
+|-------|------|----------|------------|
+| modelId | int | Yes | > 0 |
+| vehicleTypeId | int | Yes | > 0 |
+| plate | string | Yes | Same plate rules as vehicle CRUD |
+| vin | string? | No | If provided: 17 alphanumeric chars (uppercase) |
+| year | int | Yes | 1900 … current UTC year + 1 |
+| color | string? | No | Max 30 chars |
+| mileage | int | Yes | ≥ 0 |
+
+**Success (200):** `ClientVehicleDto`
+
+**Possible errors:** Same plate/VIN validation as vehicle CRUD (`ClientVehicleFlows.PlateRequired`, `PlateInvalid`, `PlateAlreadyExists`, `VinAlreadyExists`, etc.)
 
 #### POST /api/vehicles/{vehicleId}/transfer-ownership
 
@@ -1351,6 +1390,8 @@ All search endpoints require query parameter **`term`**.
 
 **Source:** `Api/Controllers/ServiceOrderWorkflowController.cs`  
 **Success (200):** `ServiceOrderFullDetailDto` or `ServiceOrderWorkflowDto`
+
+**`ServiceOrderFullDetailDto` vehicle fields:** Includes `vehicleId` (from `ServiceOrderDto`) and **`vehiclePlate`** (string — plate of the linked vehicle at read time; empty string if vehicle not found).
 
 ---
 
@@ -1873,16 +1914,19 @@ export interface VehicleDto {
   vehicleId: number;
   modelId: number;
   vehicleTypeId: number;
+  plate: string;
   vin: string;
   year: number;
   color?: string;
   mileage: number;
   isActive: boolean;
+  createdAt?: string;
 }
 
 export interface CreateVehicleRequest {
   modelId: number;
   vehicleTypeId: number;
+  plate: string;
   vin: string;
   year: number;
   color?: string;
@@ -1893,6 +1937,7 @@ export interface CreateVehicleRequest {
 export interface UpdateVehicleRequest {
   modelId: number;
   vehicleTypeId: number;
+  plate: string;
   vin: string;
   year: number;
   color?: string;
@@ -1976,6 +2021,7 @@ export interface ServiceOrderInvoiceSummaryDto {
 }
 
 export interface ServiceOrderFullDetailDto extends ServiceOrderDto {
+  vehiclePlate: string;
   inventory?: ServiceOrderInventorySummaryDto;
   services: ServiceOrderServiceSummaryDto[];
   invoice?: ServiceOrderInvoiceSummaryDto;
@@ -2179,6 +2225,7 @@ export interface ClientSearchResultDto {
 
 export interface VehicleSearchResultDto {
   vehicleId: number;
+  plate: string;
   vin: string;
   modelId: number;
   vehicleTypeId: number;
@@ -2238,6 +2285,7 @@ export interface ClientVehicleDto {
   vehicleId: number;
   modelId: number;
   vehicleTypeId: number;
+  plate: string;
   vin: string;
   year: number;
   color?: string;
@@ -2390,6 +2438,17 @@ export interface CreateClientWithVehicleRequest {
   phoneNumber?: string;
   modelId: number;
   vehicleTypeId: number;
+  plate: string;
+  vin?: string;
+  year: number;
+  color?: string;
+  mileage: number;
+}
+
+export interface AddVehicleToClientRequest {
+  modelId: number;
+  vehicleTypeId: number;
+  plate: string;
   vin?: string;
   year: number;
   color?: string;
@@ -2404,6 +2463,7 @@ export interface ClientWithVehicleDto {
   fullName: string;
   primaryEmail?: string;
   primaryPhoneNumber?: string;
+  plate: string;
   vin: string;
 }
 

@@ -35,6 +35,7 @@ export interface CreateClientWithVehicleRequest {
   phoneNumber?: string;
   modelId: number;
   vehicleTypeId: number;
+  plate: string;
   vin?: string;
   year: number;
   color?: string;
@@ -49,5 +50,6 @@ export interface ClientWithVehicleDto {
   fullName: string;
   primaryEmail?: string;
   primaryPhoneNumber?: string;
+  plate: string;
   vin: string;
 }

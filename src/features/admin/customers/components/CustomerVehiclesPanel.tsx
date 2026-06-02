@@ -7,6 +7,7 @@ import {
   useVehicleCatalogLookups,
 } from '@/features/admin/vehicles/hooks/useVehicleCatalogLookups';
 import type { ClientVehicleDto } from '@/features/admin/vehicles/types/vehicles.types';
+import { formatVehicleIdentityLabel } from '@/features/admin/vehicles/utils/vehiclePlate';
 import { AdminDataTable } from '@/features/admin/components/AdminDataTable';
 import { useAsyncRequest } from '@/hooks/useAsyncRequest';
 import { adminVehicleDetailPath } from '@/routes/routePaths';
@@ -42,8 +43,19 @@ export function CustomerVehiclesPanel({ personId, refreshKey = 0 }: CustomerVehi
           to={adminVehicleDetailPath(vehicle.vehicleId)}
           className="font-medium text-accent hover:underline"
         >
-          #{vehicle.vehicleId}
+          {formatVehicleIdentityLabel({
+            plate: vehicle.plate,
+            vin: vehicle.vin,
+            vehicleId: vehicle.vehicleId,
+          })}
         </Link>
+      ),
+    },
+    {
+      id: 'plate',
+      header: 'Plate',
+      cell: (vehicle: ClientVehicleDto) => (
+        <span className="font-mono text-sm">{vehicle.plate || '—'}</span>
       ),
     },
     {
@@ -106,8 +118,8 @@ export function CustomerVehiclesPanel({ personId, refreshKey = 0 }: CustomerVehi
           </p>
         </div>
         <p className="text-xs text-text-muted">
-          Adding a vehicle via POST /api/clients/&#123;personId&#125;/vehicles is deferred until
-          the request body is documented in api-contract.md.
+          Adding a vehicle via POST /api/clients/&#123;personId&#125;/vehicles requires{' '}
+          <code className="text-xs">plate</code> (see api-contract.md). Add-vehicle UI is deferred.
         </p>
       </div>
 

@@ -72,6 +72,7 @@ export interface ServiceOrderInvoiceSummaryDto {
 }
 
 export interface ServiceOrderFullDetailDto extends ServiceOrderDto {
+  vehiclePlate: string;
   inventory?: ServiceOrderInventorySummaryDto;
   services: ServiceOrderServiceSummaryDto[];
   invoice?: ServiceOrderInvoiceSummaryDto;
@@ -147,12 +148,14 @@ export function serviceOrderMatchesSearch(
   order: ServiceOrderDto,
   term: string,
   vehicleVin?: string,
+  vehiclePlate?: string,
 ): boolean {
   const haystack = [
     String(order.serviceOrderId),
     String(order.vehicleId),
     order.generalDescription,
     vehicleVin,
+    vehiclePlate,
     formatOrderStatusLabel(order.orderStatusId),
   ]
     .filter(Boolean)

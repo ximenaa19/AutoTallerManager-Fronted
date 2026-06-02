@@ -13,6 +13,7 @@ import { TransferOwnershipModal } from '@/features/admin/vehicles/components/Tra
 import { VehicleDetailPanel } from '@/features/admin/vehicles/components/VehicleDetailPanel';
 import { VehicleForm } from '@/features/admin/vehicles/components/VehicleForm';
 import { useVehicleCatalogLookups } from '@/features/admin/vehicles/hooks/useVehicleCatalogLookups';
+import { formatVehicleIdentityLabel } from '@/features/admin/vehicles/utils/vehiclePlate';
 import { useAsyncRequest } from '@/hooks/useAsyncRequest';
 import { ROUTES } from '@/routes/routePaths';
 
@@ -120,7 +121,11 @@ export function VehicleDetailPage() {
 
       <AdminPageHeader
         title={`Vehicle #${vehicle.vehicleId}`}
-        description={vehicle.vin ? `VIN ${vehicle.vin}` : 'Workshop fleet record'}
+        description={formatVehicleIdentityLabel({
+          plate: vehicle.plate,
+          vin: vehicle.vin,
+          vehicleId: vehicle.vehicleId,
+        })}
         actions={
           <>
             <Button
@@ -192,7 +197,7 @@ export function VehicleDetailPage() {
         open={editOpen}
         onClose={() => setEditOpen(false)}
         title={`Edit vehicle #${vehicle.vehicleId}`}
-        description="Update model, type, VIN, and other fleet fields."
+        description="Update model, type, plate, VIN, and other fleet fields."
         size="lg"
       >
         <VehicleForm

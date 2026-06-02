@@ -523,13 +523,13 @@
 
 ## POST /api/clients/{personId}/vehicles request body
 
-**Status:** Deferred — read-only add-vehicle UI disabled
+**Status:** Partially resolved (2026-06-02) — request body documented; add-vehicle UI still deferred
 
 **Related page/feature:** Admin → Customers detail → Add vehicle
 
-**Problem:** `api-contract.md` §9 lists the route and auth but does not document the JSON request body for adding a vehicle to an existing client.
+**Resolution:** `AddVehicleToClientRequest` is documented in `api-contract.md` §9 (Client vehicles) and §10, including required `plate` with the same validation rules as vehicle CRUD.
 
-**Frontend handling:** Customer detail shows linked vehicles via GET `/api/clients/{personId}/vehicles` only. Add-vehicle action is not exposed until `Create*` request fields are added to §10.
+**Frontend handling:** Customer detail shows linked vehicles via GET `/api/clients/{personId}/vehicles` only. Add-vehicle action is not exposed until a form is implemented in the Admin Customers module.
 
 ---
 

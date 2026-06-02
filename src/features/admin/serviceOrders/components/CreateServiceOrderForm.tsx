@@ -12,6 +12,7 @@ import type {
   CreateWorkshopIntakeRequest,
 } from '@/features/admin/serviceOrders/types/workshopIntake.types';
 import type { VehicleSearchResultDto } from '@/features/admin/vehicles/types/vehicles.types';
+import { formatVehicleIdentityLabel } from '@/features/admin/vehicles/utils/vehiclePlate';
 
 export interface CreateServiceOrderFormProps {
   lookups: WorkshopCatalogLookups;
@@ -82,7 +83,13 @@ export function CreateServiceOrderForm({
   const handleSelectVehicle = (vehicle: VehicleSearchResultDto) => {
     setSelectedVehicle(vehicle);
     setVehicleResults([]);
-    setVehicleSearch(vehicle.vin ? `VIN ${vehicle.vin}` : `Vehicle #${vehicle.vehicleId}`);
+    setVehicleSearch(
+      formatVehicleIdentityLabel({
+        plate: vehicle.plate,
+        vin: vehicle.vin,
+        vehicleId: vehicle.vehicleId,
+      }),
+    );
   };
 
   const updateServiceLine = (
@@ -188,7 +195,7 @@ export function CreateServiceOrderForm({
             name="vehicleSearch"
             label="Search vehicle"
             required
-            placeholder="Search by VIN or vehicle ID (min. 2 chars)…"
+            placeholder="Search by plate, VIN, or vehicle ID (min. 2 chars)…"
             value={vehicleSearch}
             onChange={(event) => {
               setVehicleSearch(event.target.value);
@@ -210,7 +217,11 @@ export function CreateServiceOrderForm({
                   onClick={() => handleSelectVehicle(vehicle)}
                 >
                   <span className="text-sm font-medium text-text-primary">
-                    #{vehicle.vehicleId} · {vehicle.vin || 'No VIN'}
+                    {formatVehicleIdentityLabel({
+                      plate: vehicle.plate,
+                      vin: vehicle.vin,
+                      vehicleId: vehicle.vehicleId,
+                    })}
                   </span>
                   <span className="text-xs text-text-secondary">
                     Year {vehicle.year}
@@ -223,8 +234,12 @@ export function CreateServiceOrderForm({
         )}
         {selectedVehicle && (
           <p className="text-xs text-success">
-            Selected vehicle #{selectedVehicle.vehicleId}
-            {selectedVehicle.vin ? ` (${selectedVehicle.vin})` : ''}
+            Selected:{' '}
+            {formatVehicleIdentityLabel({
+              plate: selectedVehicle.plate,
+              vin: selectedVehicle.vin,
+              vehicleId: selectedVehicle.vehicleId,
+            })}
           </p>
         )}
       </div>

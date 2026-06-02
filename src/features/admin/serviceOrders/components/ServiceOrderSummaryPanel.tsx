@@ -69,6 +69,9 @@ export function ServiceOrderSummaryPanel({
           </dd>
         </div>
         <DetailRow label="Entry date" value={formatDateTime(order.entryDate)} />
+        {order.vehiclePlate && (
+          <DetailRow label="Vehicle plate" value={order.vehiclePlate} />
+        )}
         <DetailRow
           label="Estimated delivery"
           value={

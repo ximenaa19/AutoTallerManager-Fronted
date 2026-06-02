@@ -3,6 +3,7 @@ export interface VehicleDto {
   vehicleId: number;
   modelId: number;
   vehicleTypeId: number;
+  plate: string;
   vin: string;
   year: number;
   color?: string;
@@ -13,6 +14,7 @@ export interface VehicleDto {
 
 export interface VehicleSearchResultDto {
   vehicleId: number;
+  plate: string;
   vin: string;
   modelId: number;
   vehicleTypeId: number;
@@ -25,6 +27,7 @@ export interface ClientVehicleDto {
   vehicleId: number;
   modelId: number;
   vehicleTypeId: number;
+  plate: string;
   vin: string;
   year: number;
   color?: string;
@@ -42,6 +45,7 @@ export interface TransferVehicleOwnershipRequest {
 export interface CreateVehicleRequest {
   modelId: number;
   vehicleTypeId: number;
+  plate: string;
   vin: string;
   year: number;
   color?: string;
@@ -52,11 +56,22 @@ export interface CreateVehicleRequest {
 export interface UpdateVehicleRequest {
   modelId: number;
   vehicleTypeId: number;
+  plate: string;
   vin: string;
   year: number;
   color?: string;
   mileage: number;
   isActive: boolean;
+}
+
+export interface AddVehicleToClientRequest {
+  modelId: number;
+  vehicleTypeId: number;
+  plate: string;
+  vin?: string;
+  year: number;
+  color?: string;
+  mileage: number;
 }
 
 export interface VehicleBrandRecord {
@@ -80,6 +95,7 @@ export function vehicleMatchesSearch(vehicle: VehicleDto, term: string): boolean
   if (!normalized) return true;
 
   return [
+    vehicle.plate,
     vehicle.vin,
     String(vehicle.vehicleId),
     String(vehicle.modelId),

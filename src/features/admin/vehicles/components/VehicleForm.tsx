@@ -9,6 +9,12 @@ import type {
   UpdateVehicleRequest,
   VehicleDto,
 } from '@/features/admin/vehicles/types/vehicles.types';
+import { TemporaryPlateNotice } from '@/features/admin/vehicles/components/TemporaryPlateNotice';
+import {
+  normalizePlate,
+  PLATE_MAX_LENGTH,
+  validatePlate,
+} from '@/features/admin/vehicles/utils/vehiclePlate';
 import { validateMaxLength, validateRequired } from '@/utils/validation';
 
 const VIN_LENGTH = 17;
@@ -17,6 +23,7 @@ const COLOR_MAX_LENGTH = 30;
 interface VehicleFormState {
   modelId: string;
   vehicleTypeId: string;
+  plate: string;
   vin: string;
   year: string;
   color: string;
@@ -29,6 +36,7 @@ type VehicleFieldErrors = Partial<Record<keyof VehicleFormState, string>>;
 const emptyForm: VehicleFormState = {
   modelId: '',
   vehicleTypeId: '',
+  plate: '',
   vin: '',
   year: '',
   color: '',
@@ -40,6 +48,7 @@ function vehicleToForm(vehicle: VehicleDto): VehicleFormState {
   return {
     modelId: String(vehicle.modelId),
     vehicleTypeId: String(vehicle.vehicleTypeId),
+    plate: vehicle.plate,
     vin: vehicle.vin,
     year: String(vehicle.year),
     color: vehicle.color ?? '',
@@ -52,6 +61,7 @@ function buildPayload(form: VehicleFormState): CreateVehicleRequest {
   return {
     modelId: Number(form.modelId),
     vehicleTypeId: Number(form.vehicleTypeId),
+    plate: normalizePlate(form.plate),
     vin: form.vin.trim().toUpperCase(),
     year: Number(form.year),
     color: form.color.trim() || undefined,
@@ -121,6 +131,7 @@ export function VehicleForm({
 
     errors.modelId = validateRequired(form.modelId, 'Model');
     errors.vehicleTypeId = validateRequired(form.vehicleTypeId, 'Type');
+    errors.plate = validatePlate(form.plate);
 
     if (!vin) {
       errors.vin = 'VIN is required';
@@ -183,6 +194,10 @@ export function VehicleForm({
         </div>
       )}
 
+      {mode === 'edit' && initialVehicle && (
+        <TemporaryPlateNotice plate={initialVehicle.plate} />
+      )}
+
       <Select
         name="modelId"
         label="Model"
@@ -203,6 +218,17 @@ export function VehicleForm({
         options={typeOptions}
         placeholder="Select type"
         error={fieldErrors.vehicleTypeId}
+      />
+
+      <Input
+        name="plate"
+        label="Plate"
+        required
+        value={form.plate}
+        onChange={(event) => updateField('plate', event.target.value.toUpperCase())}
+        maxLength={PLATE_MAX_LENGTH}
+        hint="5–10 characters; letters, numbers, and hyphens"
+        error={fieldErrors.plate}
       />
 
       <Input
