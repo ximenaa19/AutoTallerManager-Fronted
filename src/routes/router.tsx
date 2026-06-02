@@ -1,48 +1,60 @@
+import { type ComponentType, type LazyExoticComponent } from 'react';
 import { Navigate, createBrowserRouter } from 'react-router-dom';
 import { ForbiddenPage } from '@/components/feedback/ForbiddenPage';
 import { PrivateLayout } from '@/components/layout/PrivateLayout';
-import { SelectRolePage } from '@/features/auth/pages/SelectRolePage';
-import { LoginPage } from '@/features/auth/pages/LoginPage';
-import { RegisterClientPage } from '@/features/auth/pages/RegisterClientPage';
-import { AccountProfilePage } from '@/features/account/pages/AccountProfilePage';
-import { ChangePasswordPage } from '@/features/account/pages/ChangePasswordPage';
-import { AdminDashboardPage } from '@/pages/dashboards/AdminDashboardPage';
-import { ClientDashboardPage } from '@/pages/dashboards/ClientDashboardPage';
-import { MechanicDashboardPage } from '@/pages/dashboards/MechanicDashboardPage';
-import { ReceptionistDashboardPage } from '@/pages/dashboards/ReceptionistDashboardPage';
-import { ComingSoonPage } from '@/pages/placeholders/ComingSoonPage';
-import { UsersPage } from '@/features/admin/pages/UsersPage';
-import { StaffPage } from '@/features/admin/pages/StaffPage';
-import { RolesPage } from '@/features/admin/pages/RolesPage';
-import { CatalogsHomePage } from '@/features/admin/catalogs/pages/CatalogsHomePage';
-import { CatalogDetailPage } from '@/features/admin/catalogs/pages/CatalogDetailPage';
-import { CustomersPage } from '@/features/admin/customers/pages/CustomersPage';
-import { CustomerDetailPage } from '@/features/admin/customers/pages/CustomerDetailPage';
-import { VehiclesPage } from '@/features/admin/vehicles/pages/VehiclesPage';
-import { VehicleDetailPage } from '@/features/admin/vehicles/pages/VehicleDetailPage';
-import { ServiceOrdersPage } from '@/features/admin/serviceOrders/pages/ServiceOrdersPage';
-import { ServiceOrderDetailPage } from '@/features/admin/serviceOrders/pages/ServiceOrderDetailPage';
-import { InventoryPage } from '@/features/admin/inventory/pages/InventoryPage';
-import { PurchasesPage } from '@/features/admin/inventory/pages/PurchasesPage';
-import { InvoicingPage } from '@/features/admin/billing/pages/InvoicingPage';
-import { InvoiceDetailPage } from '@/features/admin/billing/pages/InvoiceDetailPage';
-import { PaymentsPage } from '@/features/admin/billing/pages/PaymentsPage';
-import { AuditPage } from '@/features/admin/reports/pages/AuditPage';
-import { MechanicsPage } from '@/features/admin/mechanics/pages/MechanicsPage';
-import { ReportsPage } from '@/features/admin/reports/pages/ReportsPage';
+import {
+  AccountProfilePage,
+  AdminDashboardPage,
+  AuditPage,
+  CatalogDetailPage,
+  CatalogsHomePage,
+  ChangePasswordPage,
+  ClientDashboardPage,
+  ComingSoonPage,
+  CustomerDetailPage,
+  CustomersPage,
+  InventoryPage,
+  InvoiceDetailPage,
+  InvoicingPage,
+  LoginPage,
+  MechanicDashboardPage,
+  MechanicsPage,
+  PaymentsPage,
+  PurchasesPage,
+  ReceptionistDashboardPage,
+  RegisterClientPage,
+  ReportsPage,
+  RolesPage,
+  SelectRolePage,
+  ServiceOrderDetailPage,
+  ServiceOrdersPage,
+  StaffPage,
+  UsersPage,
+  VehicleDetailPage,
+  VehiclesPage,
+} from '@/routes/lazyPages';
+import { RouteSuspense } from '@/routes/RouteSuspense';
 import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { PublicOnlyRoute } from '@/routes/PublicOnlyRoute';
 import { RoleGuard } from '@/routes/RoleGuard';
 import { ROUTES } from '@/routes/routePaths';
 
-const comingSoon = <ComingSoonPage />;
+function lazyRoute(LazyComponent: LazyExoticComponent<ComponentType>) {
+  return (
+    <RouteSuspense>
+      <LazyComponent />
+    </RouteSuspense>
+  );
+}
+
+const comingSoon = lazyRoute(ComingSoonPage);
 
 export const router = createBrowserRouter([
   {
     element: <PublicOnlyRoute />,
     children: [
-      { path: ROUTES.LOGIN, element: <LoginPage /> },
-      { path: ROUTES.REGISTER_CLIENT, element: <RegisterClientPage /> },
+      { path: ROUTES.LOGIN, element: lazyRoute(LoginPage) },
+      { path: ROUTES.REGISTER_CLIENT, element: lazyRoute(RegisterClientPage) },
     ],
   },
   {
@@ -50,7 +62,7 @@ export const router = createBrowserRouter([
     children: [
       {
         path: ROUTES.SELECT_ROLE,
-        element: <SelectRolePage />,
+        element: lazyRoute(SelectRolePage),
       },
       {
         path: ROUTES.FORBIDDEN,
@@ -63,26 +75,29 @@ export const router = createBrowserRouter([
             element: <RoleGuard allowedRoles={['Admin']} />,
             children: [
               { path: ROUTES.ADMIN, element: <Navigate to={ROUTES.ADMIN_DASHBOARD} replace /> },
-              { path: ROUTES.ADMIN_DASHBOARD, element: <AdminDashboardPage /> },
-              { path: ROUTES.ADMIN_USERS, element: <UsersPage /> },
-              { path: ROUTES.ADMIN_STAFF, element: <StaffPage /> },
-              { path: ROUTES.ADMIN_ROLES, element: <RolesPage /> },
-              { path: ROUTES.ADMIN_CATALOGS, element: <CatalogsHomePage /> },
-              { path: ROUTES.ADMIN_CATALOG_DETAIL, element: <CatalogDetailPage /> },
-              { path: ROUTES.ADMIN_CLIENTS, element: <CustomersPage /> },
-              { path: ROUTES.ADMIN_CLIENT_DETAIL, element: <CustomerDetailPage /> },
-              { path: ROUTES.ADMIN_VEHICLES, element: <VehiclesPage /> },
-              { path: ROUTES.ADMIN_VEHICLE_DETAIL, element: <VehicleDetailPage /> },
-              { path: ROUTES.ADMIN_SERVICE_ORDERS, element: <ServiceOrdersPage /> },
-              { path: ROUTES.ADMIN_SERVICE_ORDER_DETAIL, element: <ServiceOrderDetailPage /> },
-              { path: ROUTES.ADMIN_MECHANICS, element: <MechanicsPage /> },
-              { path: ROUTES.ADMIN_INVENTORY, element: <InventoryPage /> },
-              { path: ROUTES.ADMIN_PURCHASES, element: <PurchasesPage /> },
-              { path: ROUTES.ADMIN_INVOICES, element: <InvoicingPage /> },
-              { path: ROUTES.ADMIN_INVOICE_DETAIL, element: <InvoiceDetailPage /> },
-              { path: ROUTES.ADMIN_PAYMENTS, element: <PaymentsPage /> },
-              { path: ROUTES.ADMIN_REPORTS, element: <ReportsPage /> },
-              { path: ROUTES.ADMIN_AUDIT, element: <AuditPage /> },
+              { path: ROUTES.ADMIN_DASHBOARD, element: lazyRoute(AdminDashboardPage) },
+              { path: ROUTES.ADMIN_USERS, element: lazyRoute(UsersPage) },
+              { path: ROUTES.ADMIN_STAFF, element: lazyRoute(StaffPage) },
+              { path: ROUTES.ADMIN_ROLES, element: lazyRoute(RolesPage) },
+              { path: ROUTES.ADMIN_CATALOGS, element: lazyRoute(CatalogsHomePage) },
+              { path: ROUTES.ADMIN_CATALOG_DETAIL, element: lazyRoute(CatalogDetailPage) },
+              { path: ROUTES.ADMIN_CLIENTS, element: lazyRoute(CustomersPage) },
+              { path: ROUTES.ADMIN_CLIENT_DETAIL, element: lazyRoute(CustomerDetailPage) },
+              { path: ROUTES.ADMIN_VEHICLES, element: lazyRoute(VehiclesPage) },
+              { path: ROUTES.ADMIN_VEHICLE_DETAIL, element: lazyRoute(VehicleDetailPage) },
+              { path: ROUTES.ADMIN_SERVICE_ORDERS, element: lazyRoute(ServiceOrdersPage) },
+              {
+                path: ROUTES.ADMIN_SERVICE_ORDER_DETAIL,
+                element: lazyRoute(ServiceOrderDetailPage),
+              },
+              { path: ROUTES.ADMIN_MECHANICS, element: lazyRoute(MechanicsPage) },
+              { path: ROUTES.ADMIN_INVENTORY, element: lazyRoute(InventoryPage) },
+              { path: ROUTES.ADMIN_PURCHASES, element: lazyRoute(PurchasesPage) },
+              { path: ROUTES.ADMIN_INVOICES, element: lazyRoute(InvoicingPage) },
+              { path: ROUTES.ADMIN_INVOICE_DETAIL, element: lazyRoute(InvoiceDetailPage) },
+              { path: ROUTES.ADMIN_PAYMENTS, element: lazyRoute(PaymentsPage) },
+              { path: ROUTES.ADMIN_REPORTS, element: lazyRoute(ReportsPage) },
+              { path: ROUTES.ADMIN_AUDIT, element: lazyRoute(AuditPage) },
               { path: ROUTES.ADMIN_SETTINGS, element: comingSoon },
             ],
           },
@@ -95,7 +110,7 @@ export const router = createBrowserRouter([
               },
               {
                 path: ROUTES.RECEPTIONIST_DASHBOARD,
-                element: <ReceptionistDashboardPage />,
+                element: lazyRoute(ReceptionistDashboardPage),
               },
               { path: ROUTES.RECEPTIONIST_CLIENTS, element: comingSoon },
               { path: ROUTES.RECEPTIONIST_CLIENTS_NEW, element: comingSoon },
@@ -117,7 +132,7 @@ export const router = createBrowserRouter([
                 path: ROUTES.MECHANIC,
                 element: <Navigate to={ROUTES.MECHANIC_DASHBOARD} replace />,
               },
-              { path: ROUTES.MECHANIC_DASHBOARD, element: <MechanicDashboardPage /> },
+              { path: ROUTES.MECHANIC_DASHBOARD, element: lazyRoute(MechanicDashboardPage) },
               { path: ROUTES.MECHANIC_ASSIGNED_SERVICES, element: comingSoon },
               { path: ROUTES.MECHANIC_ACTIVE_ORDERS, element: comingSoon },
               { path: ROUTES.MECHANIC_SERVICE_DETAIL, element: comingSoon },
@@ -134,7 +149,7 @@ export const router = createBrowserRouter([
                 path: ROUTES.CLIENT,
                 element: <Navigate to={ROUTES.CLIENT_DASHBOARD} replace />,
               },
-              { path: ROUTES.CLIENT_DASHBOARD, element: <ClientDashboardPage /> },
+              { path: ROUTES.CLIENT_DASHBOARD, element: lazyRoute(ClientDashboardPage) },
               { path: ROUTES.CLIENT_VEHICLES, element: comingSoon },
               { path: ROUTES.CLIENT_SERVICE_ORDERS, element: comingSoon },
               { path: ROUTES.CLIENT_APPROVALS, element: comingSoon },
@@ -143,11 +158,11 @@ export const router = createBrowserRouter([
           },
           {
             path: ROUTES.ACCOUNT_PROFILE,
-            element: <AccountProfilePage />,
+            element: lazyRoute(AccountProfilePage),
           },
           {
             path: ROUTES.ACCOUNT_CHANGE_PASSWORD,
-            element: <ChangePasswordPage />,
+            element: lazyRoute(ChangePasswordPage),
           },
         ],
       },
