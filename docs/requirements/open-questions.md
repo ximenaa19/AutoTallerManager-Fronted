@@ -725,4 +725,76 @@
 
 ---
 
-*Last reviewed against backend: 2026-06-01 (Phase 4.6). Update this file when backend or deployment config changes.*
+## Admin Reports — export and charts
+
+**Status:** Deferred — not in backend (2026-06-01)
+
+**Related page/feature:** Admin → Reports
+
+**Problem:** No PDF, Excel, or CSV export endpoints. No chart-specific report payloads.
+
+**Frontend handling:** Summary KPI cards only (StatCard grid). No chart libraries added in Phase 4.7.
+
+---
+
+## Admin Reports — date range validation
+
+**Status:** Resolved from backend (2026-06-01)
+
+**Related page/feature:** Admin → Reports date filter
+
+**Confirmed in:** `ReportService.IsDateRangeValid` — `from` must not be after `to` when both are set.
+
+**Frontend handling:** Invalid ranges return API `{ code, message }`; shown per report panel via `ErrorState`.
+
+---
+
+## Admin Audit — pagination and user display
+
+**Status:** Resolved — client-side (2026-06-01)
+
+**Related page/feature:** Admin → Audit
+
+**Confirmed in:** `GET /api/audits` returns full list (no server pagination). `AuditDto` has `userId` only — no user name or email on audit rows.
+
+**Frontend handling:** Client-side search, action-type filter, and pagination (`useClientPagination`). User column shows `User #id`. Action labels resolved via `GET /api/audit-action-types`.
+
+---
+
+## Admin Audit — recent query limit
+
+**Status:** Resolved from backend (2026-06-01)
+
+**Related page/feature:** Admin → Audit → data source “Recent”
+
+**Confirmed in:** `AuditQueryService.RecentLimit = 50`
+
+**Frontend handling:** Optional data source calls `GET /api/admin/audits/recent`; UI notes the 50-record cap.
+
+---
+
+## Admin Audit — detail by ID
+
+**Status:** Frontend decision (2026-06-01)
+
+**Related page/feature:** Audit detail modal
+
+**Confirmed in:** `GET /api/audits/{id}` exists and matches list row shape.
+
+**Frontend handling:** Detail modal uses the selected row from list/query responses (same fields as `AuditDto`). No extra fetch required for Phase 4.7.
+
+---
+
+## Admin Audit — CRUD writes
+
+**Status:** Deferred for audit UI (2026-06-01)
+
+**Related page/feature:** Admin → Audit
+
+**Problem:** `POST`/`PUT`/`DELETE` on `/api/audits` exist but manual audit creation is not an operational requirement for this phase.
+
+**Frontend handling:** Read-only audit page; no create/edit/delete actions.
+
+---
+
+*Last reviewed against backend: 2026-06-01 (Phase 4.7). Update this file when backend or deployment config changes.*

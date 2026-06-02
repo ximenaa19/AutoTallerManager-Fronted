@@ -2136,6 +2136,36 @@ export interface PaymentsReportDto {
 }
 ```
 
+### Audits
+
+**Source:** `Application/Features/Audits/Dtos/AuditDto.cs`, `Application/Features/AuditQueries/Dtos/AuditQueryDto.cs`
+
+`AuditQueryDto` has the same properties as `AuditDto`.
+
+```ts
+export interface AuditDto {
+  auditId: number;
+  userId: number;
+  auditActionTypeId: number;
+  affectedEntity: string;
+  affectedRecordId: number;
+  description?: string;
+  createdAt: string;
+}
+
+export type AuditQueryDto = AuditDto;
+```
+
+**Admin audit queries**
+
+| Method | Route | Notes |
+|--------|-------|-------|
+| GET | `/api/admin/audits/recent` | Last **50** records (`AuditQueryService.RecentLimit`) |
+| GET | `/api/admin/audits/by-entity` | Query: `entity` (required), `recordId` (required, &gt; 0) |
+| GET | `/api/admin/audits/by-user/{userId}` | Route `userId` must exist |
+
+**CRUD** `/api/audits` — Admin only; list/get for audit UI; create/update/delete exist but are not used in the read-only audit page.
+
 ### Search results
 
 ```ts

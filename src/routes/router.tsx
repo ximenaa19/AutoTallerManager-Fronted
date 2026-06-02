@@ -27,6 +27,8 @@ import { PurchasesPage } from '@/features/admin/inventory/pages/PurchasesPage';
 import { InvoicingPage } from '@/features/admin/billing/pages/InvoicingPage';
 import { InvoiceDetailPage } from '@/features/admin/billing/pages/InvoiceDetailPage';
 import { PaymentsPage } from '@/features/admin/billing/pages/PaymentsPage';
+import { AuditPage } from '@/features/admin/reports/pages/AuditPage';
+import { ReportsPage } from '@/features/admin/reports/pages/ReportsPage';
 import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { PublicOnlyRoute } from '@/routes/PublicOnlyRoute';
 import { RoleGuard } from '@/routes/RoleGuard';
@@ -78,8 +80,8 @@ export const router = createBrowserRouter([
               { path: ROUTES.ADMIN_INVOICES, element: <InvoicingPage /> },
               { path: ROUTES.ADMIN_INVOICE_DETAIL, element: <InvoiceDetailPage /> },
               { path: ROUTES.ADMIN_PAYMENTS, element: <PaymentsPage /> },
-              { path: ROUTES.ADMIN_REPORTS, element: comingSoon },
-              { path: ROUTES.ADMIN_AUDIT, element: comingSoon },
+              { path: ROUTES.ADMIN_REPORTS, element: <ReportsPage /> },
+              { path: ROUTES.ADMIN_AUDIT, element: <AuditPage /> },
               { path: ROUTES.ADMIN_SETTINGS, element: comingSoon },
             ],
           },
