@@ -28,6 +28,7 @@ import { InvoicingPage } from '@/features/admin/billing/pages/InvoicingPage';
 import { InvoiceDetailPage } from '@/features/admin/billing/pages/InvoiceDetailPage';
 import { PaymentsPage } from '@/features/admin/billing/pages/PaymentsPage';
 import { AuditPage } from '@/features/admin/reports/pages/AuditPage';
+import { MechanicsPage } from '@/features/admin/mechanics/pages/MechanicsPage';
 import { ReportsPage } from '@/features/admin/reports/pages/ReportsPage';
 import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { PublicOnlyRoute } from '@/routes/PublicOnlyRoute';
@@ -74,7 +75,7 @@ export const router = createBrowserRouter([
               { path: ROUTES.ADMIN_VEHICLE_DETAIL, element: <VehicleDetailPage /> },
               { path: ROUTES.ADMIN_SERVICE_ORDERS, element: <ServiceOrdersPage /> },
               { path: ROUTES.ADMIN_SERVICE_ORDER_DETAIL, element: <ServiceOrderDetailPage /> },
-              { path: ROUTES.ADMIN_MECHANICS, element: comingSoon },
+              { path: ROUTES.ADMIN_MECHANICS, element: <MechanicsPage /> },
               { path: ROUTES.ADMIN_INVENTORY, element: <InventoryPage /> },
               { path: ROUTES.ADMIN_PURCHASES, element: <PurchasesPage /> },
               { path: ROUTES.ADMIN_INVOICES, element: <InvoicingPage /> },

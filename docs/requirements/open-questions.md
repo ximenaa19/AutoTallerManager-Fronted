@@ -797,4 +797,40 @@
 
 ---
 
-*Last reviewed against backend: 2026-06-01 (Phase 4.7). Update this file when backend or deployment config changes.*
+# Phase 4.8 — Admin Mechanics (2026-06-01)
+
+## No dedicated list-all-mechanics endpoint
+
+**Status:** Resolved — frontend composition (2026-06-01)
+
+**Related page/feature:** Admin → Mechanics (`/admin/mechanics`)
+
+**Problem:** Backend exposes `GET /api/search/mechanics?term=` (min. 2 chars) but no paginated or full roster endpoint.
+
+**Frontend handling:** Roster built client-side from confirmed sources: `GET /api/person-roles` (Mechanic role), `GET /api/persons`, `GET /api/users` (account active flag), `GET /api/mechanic-specialty-assignments`, `GET /api/mechanic-assignments`, and `GET /api/mechanic-specialties` (catalog labels). Quick search uses `GET /api/search/mechanics?term=`. Staff registration remains on `/admin/staff`.
+
+---
+
+## MechanicAssignmentDto / workload detail fields
+
+**Status:** Resolved from backend (2026-06-01)
+
+**Related page/feature:** Admin → Mechanics → workload panel
+
+**Confirmed in:** `MechanicAssignmentDto.cs`, `OrderServiceDto.cs`
+
+**Fields:** Assignments expose `mechanicAssignmentId`, `orderServiceId`, `mechanicPersonId`, `specialtyId`. Service order context resolved via `GET /api/order-services` → `serviceOrderId`. No order status or customer name on assignment rows; link to service order detail for full context.
+
+---
+
+## Mechanic specialties edit on Admin Mechanics page
+
+**Status:** Resolved — enabled (2026-06-01)
+
+**Related page/feature:** Admin → Mechanics → Edit specialties
+
+**Confirmed:** `PUT /api/mechanics/{personId}/specialties` body `{ specialtyIds?: number[] }`; response `MechanicSpecialtySummaryDto[]`.
+
+---
+
+*Last reviewed against backend: 2026-06-01 (Phase 4.8). Update this file when backend or deployment config changes.*
