@@ -60,6 +60,24 @@ export const MechanicActiveOrdersPage = lazy(() =>
   })),
 );
 
+export const MechanicContextualGuidancePage = lazy(() =>
+  import('@/features/mechanic/pages/MechanicContextualGuidancePage').then((module) => ({
+    default: module.MechanicContextualGuidancePage,
+  })),
+);
+
+export const MechanicServiceDetailPage = lazy(() =>
+  import('@/features/mechanic/pages/MechanicServiceDetailPage').then((module) => ({
+    default: module.MechanicServiceDetailPage,
+  })),
+);
+
+export const MechanicRecordWorkPage = lazy(() =>
+  import('@/features/mechanic/pages/MechanicRecordWorkPage').then((module) => ({
+    default: module.MechanicRecordWorkPage,
+  })),
+);
+
 export const ClientDashboardPage = lazy(() =>
   import('@/pages/dashboards/ClientDashboardPage').then((module) => ({
     default: module.ClientDashboardPage,

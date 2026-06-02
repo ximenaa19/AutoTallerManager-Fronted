@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { Calendar, Car, ClipboardList } from 'lucide-react';
-import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { ServiceOrderStatusBadge } from '@/features/admin/serviceOrders/components/ServiceOrderStatusBadge';
 import type { WorkshopCatalogLookups } from '@/features/admin/serviceOrders/hooks/useWorkshopCatalogLookups';
@@ -88,15 +87,12 @@ export function MechanicActiveOrderCard({
           </span>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <Link
-            to={ROUTES.MECHANIC_ASSIGNED_SERVICES}
-            className="text-sm font-medium text-accent hover:underline"
-          >
-            Find assigned services for this order
-          </Link>
-          <Badge variant="default">Service detail — Phase 6.3</Badge>
-        </div>
+        <Link
+          to={ROUTES.MECHANIC_ASSIGNED_SERVICES}
+          className="text-sm font-medium text-accent hover:underline"
+        >
+          Find assigned services for this order
+        </Link>
       </div>
     </Card>
   );

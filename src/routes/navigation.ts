@@ -256,14 +256,14 @@ const MECHANIC_NAV: NavItem[] = [
   {
     id: 'mechanic-order-detail',
     label: 'Service Detail',
-    path: ROUTES.MECHANIC_SERVICE_DETAIL,
+    path: ROUTES.MECHANIC_SERVICE_DETAIL_HOME,
     icon: FileText,
     kind: 'module',
   },
   {
     id: 'mechanic-record-work',
     label: 'Record Work',
-    path: ROUTES.MECHANIC_RECORD_WORK,
+    path: ROUTES.MECHANIC_RECORD_WORK_HOME,
     icon: BookOpen,
     kind: 'module',
   },

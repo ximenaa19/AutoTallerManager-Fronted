@@ -1468,7 +1468,9 @@ All search endpoints require query parameter **`term`**.
 
 **Source DTO:** `Application/Features/ServiceExecution/Dtos/MechanicActiveOrderDto.cs` — **no `vehiclePlate`**.
 
-**Frontend (Phase 6.2):** `/mechanic/active-orders` consumes this endpoint only. Order status labels resolve via `GET /api/catalogs/workshop` (`orderStatuses`). Search/filter: order ID, vehicle ID, status, general description. Service detail, work report, and parts flows are not implemented on this page.
+**Frontend (Phase 6.2):** `/mechanic/active-orders` consumes this endpoint only. Order status labels resolve via `GET /api/catalogs/workshop` (`orderStatuses`). Search/filter: order ID, vehicle ID, status, general description. Cards link to Assigned Services for per-service detail (active orders DTO has no `orderServiceId`).
+
+**Frontend (Phase 6.3):** Service detail and record work use `GET /api/mechanic/my-assigned-services` (find row by `orderServiceId`) and `PUT /api/mechanic/order-services/{id}/work-performed`. There is **no** mechanic-specific single-service GET. Do not use `GET /api/service-orders/{id}/full-detail` to enrich mechanic assignment views unless product explicitly opts in (assignment-scoped DTO is the default).
 
 > There is **no** dedicated “work history” list endpoint for mechanics. Use assigned/active endpoints or product decision to filter client-side.
 

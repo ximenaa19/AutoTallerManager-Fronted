@@ -106,7 +106,7 @@ export function MechanicDashboardPage() {
 
       <DashboardSection
         title="Quick actions"
-        description="Jump to your assigned work and upcoming workflow modules."
+        description="Open your assigned work. Record work from a specific service on the Assigned Services page."
       >
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           <QuickActionCard
@@ -122,11 +122,10 @@ export function MechanicDashboardPage() {
             icon={ClipboardList}
           />
           <QuickActionCard
-            title="Record Work"
-            description="Submit work performed on an assigned service."
-            to={ROUTES.MECHANIC_RECORD_WORK}
+            title="Record work from Assigned Services"
+            description="Select an assigned service, then use Record work on that card to submit your report."
+            to={ROUTES.MECHANIC_ASSIGNED_SERVICES}
             icon={Wrench}
-            badge={<Badge variant="default">Coming soon</Badge>}
           />
         </div>
       </DashboardSection>

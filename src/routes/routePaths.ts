@@ -45,8 +45,11 @@ export const ROUTES = {
   MECHANIC_DASHBOARD: '/mechanic/dashboard',
   MECHANIC_ASSIGNED_SERVICES: '/mechanic/assigned-services',
   MECHANIC_ACTIVE_ORDERS: '/mechanic/active-orders',
-  MECHANIC_SERVICE_DETAIL: '/mechanic/service-detail',
-  MECHANIC_RECORD_WORK: '/mechanic/record-work',
+  /** Nav / redirect entry without order service id */
+  MECHANIC_SERVICE_DETAIL_HOME: '/mechanic/service-detail',
+  MECHANIC_SERVICE_DETAIL: '/mechanic/service-detail/:orderServiceId',
+  MECHANIC_RECORD_WORK_HOME: '/mechanic/record-work',
+  MECHANIC_RECORD_WORK: '/mechanic/record-work/:orderServiceId',
   MECHANIC_REQUEST_PARTS: '/mechanic/parts/request',
   MECHANIC_SEARCH_PARTS: '/mechanic/parts/search',
   MECHANIC_HISTORY: '/mechanic/history',
@@ -82,6 +85,14 @@ export function adminServiceOrderDetailPath(serviceOrderId: number): string {
 
 export function adminInvoiceDetailPath(invoiceId: number): string {
   return `/admin/invoices/${invoiceId}`;
+}
+
+export function mechanicServiceDetailPath(orderServiceId: number): string {
+  return `/mechanic/service-detail/${orderServiceId}`;
+}
+
+export function mechanicRecordWorkPath(orderServiceId: number): string {
+  return `/mechanic/record-work/${orderServiceId}`;
 }
 
 export const ACCOUNT_ROUTE_LABELS: Record<string, string> = {

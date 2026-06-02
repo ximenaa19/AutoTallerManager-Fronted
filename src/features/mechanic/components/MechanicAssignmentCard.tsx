@@ -1,10 +1,15 @@
-import { Car, ClipboardList, Wrench } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Car, ClipboardList, FileText, Wrench } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import type { WorkshopCatalogLookups } from '@/features/admin/serviceOrders/hooks/useWorkshopCatalogLookups';
 import { MechanicStatusBadge } from '@/features/mechanic/components/MechanicStatusBadge';
 import { getWorkReportStatus } from '@/features/mechanic/utils/workReportStatus';
 import type { MechanicAssignedServiceDto } from '@/features/mechanic/types/mechanicAssignments.types';
 import { formatMechanicVehicleLabel } from '@/features/mechanic/utils/vehicleLabel';
+import {
+  mechanicRecordWorkPath,
+  mechanicServiceDetailPath,
+} from '@/routes/routePaths';
 import { formatCurrency } from '@/utils/format';
 
 export interface MechanicAssignmentCardProps {
@@ -81,15 +86,33 @@ export function MechanicAssignmentCard({
         />
       </dl>
 
-      <div className="mt-auto flex flex-wrap items-center gap-3 border-t border-border pt-3 text-xs text-text-muted">
-        <span className="inline-flex items-center gap-1.5">
-          <Car className="size-3.5" aria-hidden />
-          Vehicle #{assignment.vehicleId}
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <ClipboardList className="size-3.5" aria-hidden />
-          Order #{assignment.serviceOrderId}
-        </span>
+      <div className="mt-auto flex flex-col gap-3 border-t border-border pt-3">
+        <div className="flex flex-wrap items-center gap-3 text-xs text-text-muted">
+          <span className="inline-flex items-center gap-1.5">
+            <Car className="size-3.5" aria-hidden />
+            Vehicle #{assignment.vehicleId}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <ClipboardList className="size-3.5" aria-hidden />
+            Order #{assignment.serviceOrderId}
+          </span>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            to={mechanicServiceDetailPath(assignment.orderServiceId)}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline"
+          >
+            <FileText className="size-3.5" aria-hidden />
+            View service detail
+          </Link>
+          <Link
+            to={mechanicRecordWorkPath(assignment.orderServiceId)}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline"
+          >
+            <Wrench className="size-3.5" aria-hidden />
+            Record work
+          </Link>
+        </div>
       </div>
     </Card>
   );

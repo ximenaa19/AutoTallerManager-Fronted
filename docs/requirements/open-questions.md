@@ -833,7 +833,7 @@
 
 ---
 
-*Last reviewed against backend: 2026-06-02 (Phase 6.1 Mechanic dashboard & assigned work). Update this file when backend or deployment config changes.*
+*Last reviewed against backend: 2026-06-02 (Phase 6.3 Mechanic service detail & record work). Update this file when backend or deployment config changes.*
 
 ---
 
@@ -899,7 +899,31 @@
 
 **Not in DTO (do not invent):** `vehiclePlate`, assigned-service count, pending work-report count, per-service names/descriptions. Vehicle label is `Vehicle #{vehicleId}` until backend adds `vehiclePlate`.
 
-**Deferred (later phases):** `/mechanic/service-detail` (Phase 6.3), record work, request parts, work history. Cards show “Service detail — Phase 6.3”; assigned services link is the only cross-navigation action.
+**Cross-navigation:** Active order cards link to Assigned Services (no `orderServiceId` on `MechanicActiveOrderDto`).
+
+---
+
+# Phase 6.3 — Mechanic Service Detail & Record Work (2026-06-02)
+
+## Mechanic service detail data source
+
+**Status:** Resolved — implemented (2026-06-02)
+
+**Related page/feature:** `/mechanic/service-detail/:orderServiceId`
+
+**Confirmed:** No dedicated mechanic GET for a single order service. Detail is built from `GET /api/mechanic/my-assigned-services` by matching `orderServiceId`. Unassigned or unknown IDs show an honest empty state (not Admin full-detail).
+
+---
+
+## Mechanic work report endpoint
+
+**Status:** Resolved — implemented (2026-06-02)
+
+**Related page/feature:** `/mechanic/record-work/:orderServiceId`, work report modal on service detail
+
+**Confirmed:** `PUT /api/mechanic/order-services/{id}/work-performed` with `UpdateWorkPerformedRequest` (`workPerformed` required non-empty; `laborCost` required in model — frontend sends existing assignment `laborCost` unchanged; mechanic UI does not edit labor cost).
+
+**Success:** `ServiceExecutionResultDto`. Refresh assigned services after save.
 
 ---
 
