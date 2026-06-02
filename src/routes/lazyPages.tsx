@@ -43,8 +43,20 @@ export const ReceptionistDashboardPage = lazy(() =>
 );
 
 export const MechanicDashboardPage = lazy(() =>
-  import('@/pages/dashboards/MechanicDashboardPage').then((module) => ({
+  import('@/features/mechanic/pages/MechanicDashboardPage').then((module) => ({
     default: module.MechanicDashboardPage,
+  })),
+);
+
+export const MechanicAssignedServicesPage = lazy(() =>
+  import('@/features/mechanic/pages/MechanicAssignedServicesPage').then((module) => ({
+    default: module.MechanicAssignedServicesPage,
+  })),
+);
+
+export const MechanicActiveOrdersPage = lazy(() =>
+  import('@/features/mechanic/pages/MechanicActiveOrdersPage').then((module) => ({
+    default: module.MechanicActiveOrdersPage,
   })),
 );
 

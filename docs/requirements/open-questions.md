@@ -833,4 +833,80 @@
 
 ---
 
-*Last reviewed against backend: 2026-06-01 (Phase 4.8). Update this file when backend or deployment config changes.*
+*Last reviewed against backend: 2026-06-02 (Phase 6.1 Mechanic dashboard & assigned work). Update this file when backend or deployment config changes.*
+
+---
+
+# Phase 6.1 — Mechanic Dashboard & Assigned Services (2026-06-02)
+
+## Mechanic dashboard endpoint confirmed
+
+**Status:** Resolved from backend (2026-06-02)
+
+**Related page/feature:** Mechanic → Dashboard (`/mechanic/dashboard`)
+
+**Confirmed:** `GET /api/mechanic/dashboard` → `MechanicDashboardDto` (assignedServices, activeOrders, pendingWorkReports, requestedPartsPendingApproval, activeServiceOrderIds). Scoped by JWT `personId` claim.
+
+**Frontend handling:** KPI cards bind directly to dashboard DTO; no client-side composition required.
+
+---
+
+## Mechanic assigned services endpoint confirmed
+
+**Status:** Resolved from backend (2026-06-02)
+
+**Related page/feature:** Mechanic → Assigned Services (`/mechanic/assigned-services`)
+
+**Confirmed:** `GET /api/mechanic/my-assigned-services` → `MechanicAssignedServiceDto[]`. Returns only assignments where `mechanicPersonId` matches authenticated mechanic. Safe for Mechanic role — do **not** use `GET /api/mechanic-assignments` (Admin/Receptionist only).
+
+**Frontend handling:** Assigned work board uses this endpoint only.
+
+---
+
+## Vehicle plate not in MechanicAssignedServiceDto
+
+**Status:** Resolved from backend (2026-06-02)
+
+**Related page/feature:** Mechanic assignment cards — vehicle identity label
+
+**Confirmed in:** `Application/Features/ServiceExecution/Dtos/MechanicAssignedServiceDto.cs`, `ServiceExecutionService.GetMyAssignedServicesAsync` — only `vehicleId` is projected; vehicle `Plate` is not included despite plate support elsewhere (vehicles CRUD, search, full-detail).
+
+**Frontend handling:** Show `Vehicle #{vehicleId}` until backend enriches the DTO. Type reserves optional `vehiclePlate` for forward compatibility. Do not call Admin vehicle endpoints to resolve plates from the mechanic portal.
+
+---
+
+## Mechanic assignment metadata gaps
+
+**Status:** Resolved from backend (2026-06-02)
+
+**Related page/feature:** Assignment card fields (assignment ID, assigned date, order status)
+
+**Confirmed missing from `MechanicAssignedServiceDto`:** `mechanicAssignmentId`, assignment/assigned date, parent order status.
+
+**Frontend handling:** Display order service ID, service order ID, specialty, work-performed state, and customer approval only. Order status and assignment date deferred to Phase 6.2 (`my-active-orders`) or future DTO enrichment.
+
+---
+
+## Mechanic active orders page (Phase 6.2)
+
+**Status:** Resolved — implemented (2026-06-02)
+
+**Related page/feature:** `/mechanic/active-orders`
+
+**Endpoint:** `GET /api/mechanic/my-active-orders` → `MechanicActiveOrderDto[]` (mechanic-scoped; excludes completed/cancelled/voided orders server-side).
+
+**DTO fields used in UI:** `serviceOrderId`, `vehicleId`, `orderStatusId`, `entryDate`, `estimatedDeliveryDate`, `generalDescription`.
+
+**Not in DTO (do not invent):** `vehiclePlate`, assigned-service count, pending work-report count, per-service names/descriptions. Vehicle label is `Vehicle #{vehicleId}` until backend adds `vehiclePlate`.
+
+**Deferred (later phases):** `/mechanic/service-detail` (Phase 6.3), record work, request parts, work history. Cards show “Service detail — Phase 6.3”; assigned services link is the only cross-navigation action.
+
+---
+
+## Mechanic work history
+
+**Status:** Deferred / Not supported by backend yet (unchanged)
+
+**Related page/feature:** `/mechanic/history`
+
+**Resolution:** No list endpoint. Nav item remains `kind: 'deferred'`.

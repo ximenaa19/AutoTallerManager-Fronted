@@ -1,29 +1,21 @@
-import {
-  ClipboardList,
-  Package,
-  Search,
-  Wrench,
-} from 'lucide-react';
-import { dashboardApi } from '@/api/dashboard.api';
-import { DashboardGrid } from '@/components/dashboard/DashboardGrid';
+import { Link } from 'react-router-dom';
+import { ArrowRight, ClipboardList, Wrench } from 'lucide-react';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { DashboardSection } from '@/components/dashboard/DashboardSection';
 import { QuickActionCard } from '@/components/dashboard/QuickActionCard';
-import { StatCard } from '@/components/dashboard/StatCard';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { LoadingState } from '@/components/feedback/LoadingState';
 import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { useAsyncRequest } from '@/hooks/useAsyncRequest';
+import { MechanicDashboardCards } from '@/features/mechanic/components/MechanicDashboardCards';
+import { MechanicEmptyState } from '@/features/mechanic/components/MechanicEmptyState';
+import { useMechanicDashboard } from '@/features/mechanic/hooks/useMechanicDashboard';
 import { ROUTES } from '@/routes/routePaths';
-import { formatNumber } from '@/utils/format';
 
 export function MechanicDashboardPage() {
-  const { data, isLoading, error, retry } = useAsyncRequest(
-    () => dashboardApi.getMechanicDashboard(),
-    [],
-  );
+  const { data, isLoading, error, retry } = useMechanicDashboard();
 
   if (isLoading) {
     return (
@@ -47,7 +39,7 @@ export function MechanicDashboardPage() {
 
   if (!data) {
     return (
-      <EmptyState
+      <MechanicEmptyState
         title="No dashboard data"
         description="The dashboard response was empty. Try refreshing the page."
       />
@@ -65,50 +57,29 @@ export function MechanicDashboardPage() {
       <DashboardHeader
         title="Mechanic Dashboard"
         subtitle="Shift overview for assigned services and active workshop orders."
+        actions={
+          <Link to={ROUTES.MECHANIC_ASSIGNED_SERVICES}>
+            <Button variant="secondary" rightIcon={<ArrowRight className="size-4" />}>
+              View assigned work
+            </Button>
+          </Link>
+        }
       />
 
       {!hasWork && (
-        <EmptyState
+        <MechanicEmptyState
           title="No assigned work yet"
           description="Assigned services and active orders will appear here when work is allocated to you."
+          action={
+            <Link to={ROUTES.MECHANIC_ASSIGNED_SERVICES}>
+              <Button variant="secondary">Open assigned services</Button>
+            </Link>
+          }
         />
       )}
 
       <DashboardSection title="Work summary">
-        <DashboardGrid className="2xl:grid-cols-2">
-          <StatCard
-            title="Assigned Services"
-            value={formatNumber(data.assignedServices)}
-            icon={<Wrench className="size-5" />}
-            tone="purple"
-            footer="Services assigned to you"
-          />
-          <StatCard
-            title="Active Orders"
-            value={formatNumber(data.activeOrders)}
-            icon={<ClipboardList className="size-5" />}
-            tone="info"
-            footer="Orders currently in progress"
-          />
-          <StatCard
-            title="Pending Work Reports"
-            value={formatNumber(data.pendingWorkReports)}
-            icon={<Wrench className="size-5" />}
-            tone="warning"
-            footer="Reports awaiting submission"
-          />
-          <StatCard
-            title="Parts Pending Approval"
-            value={formatNumber(data.requestedPartsPendingApproval)}
-            icon={<Package className="size-5" />}
-            tone="danger"
-            footer={
-              <Badge variant="pending" dot>
-                Awaiting staff review
-              </Badge>
-            }
-          />
-        </DashboardGrid>
+        <MechanicDashboardCards data={data} />
       </DashboardSection>
 
       <DashboardSection
@@ -135,29 +106,27 @@ export function MechanicDashboardPage() {
 
       <DashboardSection
         title="Quick actions"
-        description="Mechanic workflow modules arriving in Phase 6."
+        description="Jump to your assigned work and upcoming workflow modules."
       >
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           <QuickActionCard
             title="Assigned Services"
-            description="Open your assigned service list."
+            description="Review every service currently assigned to you."
             to={ROUTES.MECHANIC_ASSIGNED_SERVICES}
             icon={Wrench}
-            badge={<Badge variant="default">Phase 6</Badge>}
+          />
+          <QuickActionCard
+            title="Active Orders"
+            description="View active orders linked to your assignments."
+            to={ROUTES.MECHANIC_ACTIVE_ORDERS}
+            icon={ClipboardList}
           />
           <QuickActionCard
             title="Record Work"
             description="Submit work performed on an assigned service."
             to={ROUTES.MECHANIC_RECORD_WORK}
             icon={Wrench}
-            badge={<Badge variant="default">Phase 6</Badge>}
-          />
-          <QuickActionCard
-            title="Search Parts"
-            description="Find spare parts available in inventory."
-            to={ROUTES.MECHANIC_SEARCH_PARTS}
-            icon={Search}
-            badge={<Badge variant="default">Phase 6</Badge>}
+            badge={<Badge variant="default">Coming soon</Badge>}
           />
         </div>
       </DashboardSection>

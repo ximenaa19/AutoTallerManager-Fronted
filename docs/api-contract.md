@@ -1438,6 +1438,38 @@ All search endpoints require query parameter **`term`**.
 
 **Source:** `Application/Features/ServiceExecution/Requests/UpdateWorkPerformedRequest.cs`, `MechanicWorkflowController.cs`
 
+**`MechanicAssignedServiceDto`** (scoped to authenticated mechanic via `personId` claim):
+
+| Field | Type | Notes |
+|-------|------|-------|
+| orderServiceId | int | |
+| serviceOrderId | int | |
+| vehicleId | int | **No `vehiclePlate`** — plate exists on vehicles but is not projected in this DTO |
+| serviceTypeId | int | Resolve label via `GET /api/catalogs/workshop` |
+| description | string? | |
+| workPerformed | string? | Empty when work report pending |
+| laborCost | decimal | |
+| customerApproved | bool? | |
+| approvalDate | string? (ISO) | |
+| specialtyId | int | Assignment specialty |
+
+**Not returned:** `mechanicAssignmentId`, assignment date, order status, vehicle plate.
+
+**`MechanicActiveOrderDto`** (Phase 6.2 — `GET /api/mechanic/my-active-orders`):
+
+| Field | Type |
+|-------|------|
+| serviceOrderId | int |
+| vehicleId | int |
+| orderStatusId | int |
+| entryDate | string (ISO) |
+| estimatedDeliveryDate | string? (ISO) |
+| generalDescription | string? |
+
+**Source DTO:** `Application/Features/ServiceExecution/Dtos/MechanicActiveOrderDto.cs` — **no `vehiclePlate`**.
+
+**Frontend (Phase 6.2):** `/mechanic/active-orders` consumes this endpoint only. Order status labels resolve via `GET /api/catalogs/workshop` (`orderStatuses`). Search/filter: order ID, vehicle ID, status, general description. Service detail, work report, and parts flows are not implemented on this page.
+
 > There is **no** dedicated “work history” list endpoint for mechanics. Use assigned/active endpoints or product decision to filter client-side.
 
 ---
@@ -2371,6 +2403,15 @@ export interface MechanicAssignedServiceDto {
   customerApproved?: boolean;
   approvalDate?: string;
   specialtyId: number;
+}
+
+export interface MechanicActiveOrderDto {
+  serviceOrderId: number;
+  vehicleId: number;
+  orderStatusId: number;
+  entryDate: string;
+  estimatedDeliveryDate?: string;
+  generalDescription?: string;
 }
 
 export interface UpdateWorkPerformedRequest {
