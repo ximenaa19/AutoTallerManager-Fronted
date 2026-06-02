@@ -1,29 +1,22 @@
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
-import type { WorkshopCatalogLookups } from '@/features/admin/serviceOrders/hooks/useWorkshopCatalogLookups';
+import type { SelectOption } from '@/features/mechanic/utils/activeOrderStatusFilter';
 import type { MechanicActiveOrderFiltersState } from '@/features/mechanic/types/mechanicActiveOrders.types';
 
 export interface MechanicActiveOrderFiltersProps {
   filters: MechanicActiveOrderFiltersState;
-  lookups: WorkshopCatalogLookups;
+  statusFilterOptions: SelectOption[];
   resultCount: number;
   onChange: (next: MechanicActiveOrderFiltersState) => void;
 }
 
 export function MechanicActiveOrderFilters({
   filters,
-  lookups,
+  statusFilterOptions,
   resultCount,
   onChange,
 }: MechanicActiveOrderFiltersProps) {
-  const orderStatusOptions = [
-    { value: '', label: 'All order statuses' },
-    ...lookups.orderStatuses.map((item) => ({
-      value: String(item.id),
-      label: item.name,
-    })),
-  ];
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-border bg-bg-surface p-4">
@@ -47,7 +40,7 @@ export function MechanicActiveOrderFilters({
 
         <Select
           name="orderStatusFilter"
-          label="Order status"
+          label="Active status"
           value={filters.orderStatusId?.toString() ?? ''}
           onChange={(event) =>
             onChange({
@@ -55,12 +48,14 @@ export function MechanicActiveOrderFilters({
               orderStatusId: event.target.value ? Number(event.target.value) : null,
             })
           }
-          options={orderStatusOptions}
+          options={statusFilterOptions}
         />
       </div>
 
       <p className="text-xs text-text-secondary">
-        {resultCount} active order{resultCount === 1 ? '' : 's'} shown
+        {resultCount} active order{resultCount === 1 ? '' : 's'} shown. This list excludes
+        completed, cancelled, and voided orders; the status filter only includes statuses that
+        can appear here.
       </p>
     </div>
   );

@@ -11,6 +11,7 @@ import type {
   MechanicActiveOrderDto,
   MechanicActiveOrderFiltersState,
 } from '@/features/mechanic/types/mechanicActiveOrders.types';
+import { getMechanicActiveOrderStatusFilterOptions } from '@/features/mechanic/utils/activeOrderStatusFilter';
 
 const defaultFilters: MechanicActiveOrderFiltersState = {
   searchTerm: '',
@@ -71,6 +72,11 @@ export function MechanicActiveOrdersPage() {
 
   const orders = useMemo(() => data ?? [], [data]);
 
+  const statusFilterOptions = useMemo(
+    () => getMechanicActiveOrderStatusFilterOptions(orders, lookups),
+    [orders, lookups],
+  );
+
   const filteredOrders = useMemo(
     () => filterActiveOrders(orders, filters, lookups.orderStatusNameById),
     [orders, filters, lookups.orderStatusNameById],
@@ -115,7 +121,7 @@ export function MechanicActiveOrdersPage() {
 
       <MechanicActiveOrderFilters
         filters={filters}
-        lookups={lookups}
+        statusFilterOptions={statusFilterOptions}
         resultCount={filteredOrders.length}
         onChange={setFilters}
       />
