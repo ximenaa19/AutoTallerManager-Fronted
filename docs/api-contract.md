@@ -2784,7 +2784,8 @@ src/
 | **Assigned Services** | `GET /api/mechanic/my-assigned-services` |
 | **Active Orders** | `GET /api/mechanic/my-active-orders` |
 | **Work Report** | `PUT /api/mechanic/order-services/{id}/work-performed` |
-| **Request Parts** | `POST /api/order-services/{id}/request-part` |
+| **Request Parts** | `GET /api/search/parts?term=`, `POST /api/order-services/{id}/request-part` |
+| **Search Parts** | `GET /api/search/parts?term=` (Mechanic read-only) |
 
 ### Admin
 

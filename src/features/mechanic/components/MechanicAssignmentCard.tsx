@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Car, ClipboardList, FileText, Wrench } from 'lucide-react';
+import { Car, ClipboardList, FileText, Package, Wrench } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import type { WorkshopCatalogLookups } from '@/features/admin/serviceOrders/hooks/useWorkshopCatalogLookups';
 import { MechanicStatusBadge } from '@/features/mechanic/components/MechanicStatusBadge';
@@ -8,6 +8,7 @@ import type { MechanicAssignedServiceDto } from '@/features/mechanic/types/mecha
 import { formatMechanicVehicleLabel } from '@/features/mechanic/utils/vehicleLabel';
 import {
   mechanicRecordWorkPath,
+  mechanicRequestPartsPath,
   mechanicServiceDetailPath,
 } from '@/routes/routePaths';
 import { formatCurrency } from '@/utils/format';
@@ -111,6 +112,13 @@ export function MechanicAssignmentCard({
           >
             <Wrench className="size-3.5" aria-hidden />
             Record work
+          </Link>
+          <Link
+            to={mechanicRequestPartsPath(assignment.orderServiceId)}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline"
+          >
+            <Package className="size-3.5" aria-hidden />
+            Request part
           </Link>
         </div>
       </div>

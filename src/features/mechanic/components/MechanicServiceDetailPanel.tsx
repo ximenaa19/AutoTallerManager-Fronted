@@ -1,11 +1,13 @@
 import { Link } from 'react-router-dom';
-import { FileText, Wrench } from 'lucide-react';
+import { FileText, Package, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import type { WorkshopCatalogLookups } from '@/features/admin/serviceOrders/hooks/useWorkshopCatalogLookups';
 import { MechanicServiceContextCard } from '@/features/mechanic/components/MechanicServiceContextCard';
 import type { MechanicAssignedServiceDto } from '@/features/mechanic/types/mechanicAssignments.types';
 import {
   mechanicRecordWorkPath,
+  mechanicRequestPartsPath,
+  mechanicSearchPartsPath,
   ROUTES,
 } from '@/routes/routePaths';
 
@@ -13,12 +15,14 @@ export interface MechanicServiceDetailPanelProps {
   service: MechanicAssignedServiceDto;
   lookups: WorkshopCatalogLookups;
   onRecordWork?: () => void;
+  onRequestPart?: () => void;
 }
 
 export function MechanicServiceDetailPanel({
   service,
   lookups,
   onRecordWork,
+  onRequestPart,
 }: MechanicServiceDetailPanelProps) {
   return (
     <div className="space-y-6">
@@ -48,6 +52,30 @@ export function MechanicServiceDetailPanel({
               Record work
             </Link>
           )}
+          {onRequestPart ? (
+            <Button
+              type="button"
+              variant="secondary"
+              leftIcon={<Package className="size-4" />}
+              onClick={onRequestPart}
+            >
+              Request part
+            </Button>
+          ) : (
+            <Link
+              to={mechanicRequestPartsPath(service.orderServiceId)}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-bg-elevated px-4 text-sm font-medium text-text-primary transition-colors hover:bg-bg-surface focus-ring"
+            >
+              <Package className="size-4" aria-hidden />
+              Request part
+            </Link>
+          )}
+          <Link
+            to={mechanicSearchPartsPath(service.orderServiceId)}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-bg-elevated px-4 text-sm font-medium text-text-primary transition-colors hover:bg-bg-surface focus-ring"
+          >
+            Search parts
+          </Link>
           <Link
             to={ROUTES.MECHANIC_ASSIGNED_SERVICES}
             className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-bg-elevated px-4 text-sm font-medium text-text-primary transition-colors hover:bg-bg-surface focus-ring"

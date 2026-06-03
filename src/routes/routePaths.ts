@@ -51,6 +51,7 @@ export const ROUTES = {
   MECHANIC_RECORD_WORK_HOME: '/mechanic/record-work',
   MECHANIC_RECORD_WORK: '/mechanic/record-work/:orderServiceId',
   MECHANIC_REQUEST_PARTS: '/mechanic/parts/request',
+  MECHANIC_REQUEST_PARTS_WITH_SERVICE: '/mechanic/parts/request/:orderServiceId',
   MECHANIC_SEARCH_PARTS: '/mechanic/parts/search',
   MECHANIC_HISTORY: '/mechanic/history',
 
@@ -93,6 +94,17 @@ export function mechanicServiceDetailPath(orderServiceId: number): string {
 
 export function mechanicRecordWorkPath(orderServiceId: number): string {
   return `/mechanic/record-work/${orderServiceId}`;
+}
+
+export function mechanicRequestPartsPath(orderServiceId: number): string {
+  return `/mechanic/parts/request/${orderServiceId}`;
+}
+
+export function mechanicSearchPartsPath(orderServiceId?: number): string {
+  if (orderServiceId === undefined) {
+    return ROUTES.MECHANIC_SEARCH_PARTS;
+  }
+  return `${ROUTES.MECHANIC_SEARCH_PARTS}?orderServiceId=${orderServiceId}`;
 }
 
 export const ACCOUNT_ROUTE_LABELS: Record<string, string> = {

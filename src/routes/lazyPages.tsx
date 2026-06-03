@@ -78,6 +78,24 @@ export const MechanicRecordWorkPage = lazy(() =>
   })),
 );
 
+export const MechanicRequestPartsPage = lazy(() =>
+  import('@/features/mechanic/pages/MechanicRequestPartsPage').then((module) => ({
+    default: module.MechanicRequestPartsPage,
+  })),
+);
+
+export const MechanicRequestPartsWithServicePage = lazy(() =>
+  import('@/features/mechanic/pages/MechanicRequestPartsWithServicePage').then((module) => ({
+    default: module.MechanicRequestPartsWithServicePage,
+  })),
+);
+
+export const MechanicSearchPartsPage = lazy(() =>
+  import('@/features/mechanic/pages/MechanicSearchPartsPage').then((module) => ({
+    default: module.MechanicSearchPartsPage,
+  })),
+);
+
 export const ClientDashboardPage = lazy(() =>
   import('@/pages/dashboards/ClientDashboardPage').then((module) => ({
     default: module.ClientDashboardPage,

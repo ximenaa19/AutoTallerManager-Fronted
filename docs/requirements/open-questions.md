@@ -833,7 +833,7 @@
 
 ---
 
-*Last reviewed against backend: 2026-06-02 (Phase 6.3 Mechanic service detail & record work). Update this file when backend or deployment config changes.*
+*Last reviewed against backend: 2026-06-02 (Phase 6.4 Mechanic request parts & search parts). Update this file when backend or deployment config changes.*
 
 ---
 
@@ -934,3 +934,53 @@
 **Related page/feature:** `/mechanic/history`
 
 **Resolution:** No list endpoint. Nav item remains `kind: 'deferred'`.
+
+---
+
+# Phase 6.4 — Mechanic Request Parts & Search Parts (2026-06-02)
+
+## Mechanic part search endpoint
+
+**Status:** Resolved from backend (2026-06-02)
+
+**Related page/feature:** `/mechanic/parts/search`
+
+**Confirmed:** `GET /api/search/parts?term=` — roles Admin, Receptionist, Mechanic (`SearchController`). `PartSearchResultDto`: `partId`, `code`, `description`, `stock`, `minimumStock`, `unitPrice`, `isActive`. Term required, min length 2 (`SearchService.ValidateSearchTerm`). Max 20 results.
+
+**Frontend handling:** Read-only search page; no CRUD, stock adjust, or purchase UI. Category/brand not in search DTO — not displayed.
+
+---
+
+## Mechanic request part endpoint
+
+**Status:** Resolved from backend (2026-06-02)
+
+**Related page/feature:** `/mechanic/parts/request`, `/mechanic/parts/request/:orderServiceId`, request modal on service detail
+
+**Confirmed:** `POST /api/order-services/{id}/request-part` — body `{ partId, quantity, appliedUnitPrice }` (`RequestOrderServicePartRequest`). Success: `ServiceExecutionResultDto`. Mechanic must be assigned to the order service unless Admin (`ServiceExecutionService.RequestPartAsync`).
+
+**Frontend handling:** Contextual flow from assigned services / service detail only. Sidebar `/mechanic/parts/request` shows guidance without standalone request. `appliedUnitPrice` defaults from selected part catalog price.
+
+---
+
+## Part category/brand on mechanic search
+
+**Status:** Resolved — not in API (2026-06-02)
+
+**Related page/feature:** Mechanic search result cards
+
+**Confirmed:** `PartSearchResultDto` has no category or brand fields.
+
+**Frontend handling:** Do not display category/brand on mechanic search or request UI.
+
+---
+
+## Mechanic part approval status on assignment DTO
+
+**Status:** Deferred — not on assigned service list (2026-06-02)
+
+**Related page/feature:** Assigned services after part request
+
+**Problem:** `MechanicAssignedServiceDto` does not include requested parts or approval state. No mechanic-scoped GET for order service parts.
+
+**Frontend handling:** Show success message after request; do not fabricate approval badges on assignment cards until backend enriches DTO or exposes a mechanic-safe parts list.

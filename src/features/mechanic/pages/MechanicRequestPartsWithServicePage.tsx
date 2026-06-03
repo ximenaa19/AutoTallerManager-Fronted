@@ -1,45 +1,26 @@
-import { useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { LoadingState } from '@/components/feedback/LoadingState';
-import { Button } from '@/components/ui/Button';
 import { AdminPageHeader } from '@/features/admin/components/AdminPageHeader';
 import { useWorkshopCatalogLookups } from '@/features/admin/serviceOrders/hooks/useWorkshopCatalogLookups';
-import { MechanicEmptyState } from '@/features/mechanic/components/MechanicEmptyState';
-import { MechanicServiceDetailPanel } from '@/features/mechanic/components/MechanicServiceDetailPanel';
-import { MechanicPartRequestModal } from '@/features/mechanic/components/MechanicPartRequestModal';
-import { MechanicWorkReportModal } from '@/features/mechanic/components/MechanicWorkReportModal';
 import { mechanicPartRequestsApi } from '@/features/mechanic/api/mechanicPartRequests.api';
+import { MechanicEmptyState } from '@/features/mechanic/components/MechanicEmptyState';
+import { MechanicPartRequestForm } from '@/features/mechanic/components/MechanicPartRequestForm';
+import { MechanicServiceContextCard } from '@/features/mechanic/components/MechanicServiceContextCard';
 import { useMechanicServiceDetail } from '@/features/mechanic/hooks/useMechanicServiceDetail';
 import {
-  mechanicRecordWorkPath,
+  mechanicServiceDetailPath,
   ROUTES,
 } from '@/routes/routePaths';
 
-interface LocationState {
-  successMessage?: string;
-}
-
-export function MechanicServiceDetailPage() {
+export function MechanicRequestPartsWithServicePage() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { orderServiceId: orderServiceIdParam } = useParams<{ orderServiceId: string }>();
   const orderServiceId = Number(orderServiceIdParam);
   const isValidId = Number.isFinite(orderServiceId) && orderServiceId > 0;
-
-  const [recordModalOpen, setRecordModalOpen] = useState(false);
-  const [partRequestModalOpen, setPartRequestModalOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
-  const locationState = location.state as LocationState | null;
-
-  useEffect(() => {
-    if (locationState?.successMessage) {
-      setSuccessMessage(locationState.successMessage);
-      navigate(location.pathname, { replace: true, state: null });
-    }
-  }, [location.pathname, locationState?.successMessage, navigate]);
 
   const {
     service,
@@ -79,8 +60,8 @@ export function MechanicServiceDetailPage() {
   if (isLoading || catalogsLoading) {
     return (
       <LoadingState
-        title="Loading service detail"
-        description="Fetching your assigned service from the workshop…"
+        title="Loading part request"
+        description="Fetching your assigned service…"
         className="min-h-[420px]"
       />
     );
@@ -117,8 +98,8 @@ export function MechanicServiceDetailPage() {
           Assigned services
         </Link>
         <MechanicEmptyState
-          title="Service not found in your assignments"
-          description="This order service is not assigned to your account, or it may have been reassigned. Open Assigned Services to pick work allocated to you."
+          title="Cannot request parts for this service"
+          description="The order service is not in your current assignments. Part requests are only allowed for services assigned to your account."
         />
       </div>
     );
@@ -131,26 +112,16 @@ export function MechanicServiceDetailPage() {
   return (
     <div className="space-y-6">
       <Link
-        to={ROUTES.MECHANIC_ASSIGNED_SERVICES}
+        to={mechanicServiceDetailPath(service.orderServiceId)}
         className="inline-flex items-center gap-2 text-sm font-medium text-text-secondary hover:text-text-primary"
       >
         <ArrowLeft className="size-4" aria-hidden />
-        Assigned services
+        Service detail
       </Link>
 
       <AdminPageHeader
-        title="Service detail"
+        title="Request spare parts"
         description={`${serviceTypeName} · Order service #${service.orderServiceId}`}
-        actions={
-          <Button
-            type="button"
-            onClick={() =>
-              navigate(mechanicRecordWorkPath(service.orderServiceId))
-            }
-          >
-            Record work
-          </Button>
-        }
       />
 
       {successMessage && (
@@ -162,37 +133,28 @@ export function MechanicServiceDetailPage() {
         </div>
       )}
 
-      <MechanicServiceDetailPanel
-        service={service}
-        lookups={lookups}
-        onRecordWork={() => setRecordModalOpen(true)}
-        onRequestPart={() => setPartRequestModalOpen(true)}
-      />
+      <MechanicServiceContextCard service={service} lookups={lookups} />
 
-      <MechanicPartRequestModal
-        open={partRequestModalOpen}
-        orderServiceId={service.orderServiceId}
-        serviceTypeLabel={serviceTypeName}
-        onClose={() => setPartRequestModalOpen(false)}
-        onSubmit={async (payload) => {
-          await mechanicPartRequestsApi.requestPart(service.orderServiceId, payload);
-          refresh();
-          setSuccessMessage(
-            'Part request submitted. Awaiting customer or staff approval.',
-          );
-        }}
-      />
-
-      <MechanicWorkReportModal
-        open={recordModalOpen}
-        service={service}
-        lookups={lookups}
-        onClose={() => setRecordModalOpen(false)}
-        onSuccess={() => {
-          refresh();
-          setSuccessMessage('Work report saved successfully.');
-        }}
-      />
+      <section className="rounded-lg border border-border bg-bg-surface p-5">
+        <h3 className="text-base font-semibold text-text-primary">Part request</h3>
+        <p className="mt-1 text-sm text-text-secondary">
+          Search the workshop catalog and submit a quantity. Applied unit price defaults
+          to the catalog price; customer approval is tracked separately.
+        </p>
+        <div className="mt-4">
+          <MechanicPartRequestForm
+            orderServiceId={service.orderServiceId}
+            onSubmit={async (payload) => {
+              await mechanicPartRequestsApi.requestPart(service.orderServiceId, payload);
+              refresh();
+              setSuccessMessage(
+                'Part request submitted. Awaiting customer or staff approval.',
+              );
+            }}
+            onCancel={() => navigate(mechanicServiceDetailPath(service.orderServiceId))}
+          />
+        </div>
+      </section>
     </div>
   );
 }
