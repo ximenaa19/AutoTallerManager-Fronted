@@ -28,6 +28,17 @@ export interface InvoiceDto {
   observations?: string;
 }
 
+export interface InvoiceDetailDto {
+  invoiceDetailId: number;
+  invoiceId: number;
+  sourcePartId: number | null;
+  concept: string;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+  lineType: string;
+}
+
 export interface GenerateInvoiceFromServiceOrderRequest {
   tax: number;
   observations?: string;

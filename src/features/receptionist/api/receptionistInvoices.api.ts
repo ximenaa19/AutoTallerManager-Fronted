@@ -1,6 +1,7 @@
 import { httpClient } from '@/api/httpClient';
 import type {
   GeneratedInvoiceDto,
+  InvoiceDetailDto,
   InvoiceDto,
   InvoicePaymentSummaryDto,
   InvoiceSearchResultDto,
@@ -21,6 +22,10 @@ export const receptionistInvoicesApi = {
 
   getById(invoiceId: number) {
     return httpClient.get<InvoiceDto>(`/api/invoices/${invoiceId}`);
+  },
+
+  getInvoiceDetails(invoiceId: number) {
+    return httpClient.get<InvoiceDetailDto[]>(`/api/invoices/${invoiceId}/details`);
   },
 
   generateFromServiceOrder(

@@ -33,6 +33,7 @@ import type {
   ClientServiceOrderSummaryDto,
 } from '@/features/receptionist/types/receptionistClients.types';
 import type {
+  InvoiceDetailDto,
   InvoiceDto,
   InvoicePaymentSummaryDto,
 } from '@/features/receptionist/types/receptionistInvoices.types';
@@ -373,6 +374,9 @@ export function ReceptionistInvoicesPage() {
   const [invoiceDetail, setInvoiceDetail] = useState<InvoiceDto | null>(null);
   const [invoiceDetailLoading, setInvoiceDetailLoading] = useState(false);
   const [invoiceDetailError, setInvoiceDetailError] = useState<string | null>(null);
+  const [invoiceDetails, setInvoiceDetails] = useState<InvoiceDetailDto[]>([]);
+  const [invoiceDetailsLoading, setInvoiceDetailsLoading] = useState(false);
+  const [invoiceDetailsError, setInvoiceDetailsError] = useState<string | null>(null);
 
   const [paymentSummary, setPaymentSummary] = useState<InvoicePaymentSummaryDto | null>(null);
   const [paymentSummaryLoading, setPaymentSummaryLoading] = useState(false);
@@ -440,15 +444,22 @@ export function ReceptionistInvoicesPage() {
     setSelectedInvoiceId(null);
     setInvoiceDetail(null);
     setInvoiceDetailError(null);
+    setInvoiceDetails([]);
+    setInvoiceDetailsError(null);
+    setInvoiceDetailsLoading(false);
     setPaymentSummary(null);
     setPaymentSummaryError(null);
+    setPaymentSummaryLoading(false);
   }, []);
 
   const loadInvoiceDetail = useCallback(async (invoiceId: number) => {
     setInvoiceDetailLoading(true);
+    setInvoiceDetailsLoading(true);
     setPaymentSummaryLoading(true);
     setInvoiceDetailError(null);
+    setInvoiceDetailsError(null);
     setPaymentSummaryError(null);
+    setInvoiceDetails([]);
 
     try {
       const invoiceResponse = await receptionistInvoicesApi.getById(invoiceId);
@@ -461,6 +472,16 @@ export function ReceptionistInvoicesPage() {
     }
 
     try {
+      const detailsResponse = await receptionistInvoicesApi.getInvoiceDetails(invoiceId);
+      setInvoiceDetails(detailsResponse.data);
+    } catch (error) {
+      setInvoiceDetailsError(getErrorMessage(error));
+      setInvoiceDetails([]);
+    } finally {
+      setInvoiceDetailsLoading(false);
+    }
+
+    try {
       const summaryResponse = await receptionistInvoicesApi.getPaymentSummary(invoiceId);
       setPaymentSummary(summaryResponse.data);
     } catch (error) {
@@ -470,6 +491,12 @@ export function ReceptionistInvoicesPage() {
       setPaymentSummaryLoading(false);
     }
   }, []);
+
+  const retrySelectedInvoiceDetail = useCallback(() => {
+    if (selectedInvoiceId) {
+      void loadInvoiceDetail(selectedInvoiceId);
+    }
+  }, [loadInvoiceDetail, selectedInvoiceId]);
 
   const openInvoiceDetail = useCallback(
     (invoiceId: number) => {
@@ -599,7 +626,9 @@ export function ReceptionistInvoicesPage() {
     }
 
     if (!hasBillableItems) {
-      setGenerateError('Only approved services and approved parts will be invoiced.');
+      setGenerateError(
+        'This service order has no approved billable items yet. Ask the client to review pending approvals before generating the invoice.',
+      );
       return;
     }
 
@@ -718,11 +747,7 @@ export function ReceptionistInvoicesPage() {
           <ErrorState
             title="Unable to load invoice detail"
             message={invoiceDetailError}
-            onRetry={() => {
-              if (selectedInvoiceId) {
-                void loadInvoiceDetail(selectedInvoiceId);
-              }
-            }}
+            onRetry={retrySelectedInvoiceDetail}
           />
         ) : !invoiceDetail ? (
           <div className="text-sm text-text-secondary">No invoice loaded.</div>
@@ -772,6 +797,59 @@ export function ReceptionistInvoicesPage() {
 
             <Card>
               <CardHeader>
+                <CardTitle>Invoice details</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {invoiceDetailsLoading ? (
+                  <LoadingState
+                    title="Loading invoice lines"
+                    description="Getting real invoice detail lines from backend."
+                  />
+                ) : invoiceDetailsError ? (
+                  <ErrorState
+                    title="Unable to load invoice lines"
+                    message={invoiceDetailsError}
+                    onRetry={retrySelectedInvoiceDetail}
+                  />
+                ) : invoiceDetails.length === 0 ? (
+                  <EmptyState
+                    title="No invoice lines"
+                    description="This invoice does not have detail lines returned by the backend yet."
+                    className="bg-bg-elevated py-6"
+                  />
+                ) : (
+                  <div className="overflow-x-auto rounded-lg border border-border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Concept</TableHead>
+                          <TableHead>Line type</TableHead>
+                          <TableHead>Quantity</TableHead>
+                          <TableHead>Unit price</TableHead>
+                          <TableHead>Subtotal</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {invoiceDetails.map((line) => (
+                          <TableRow key={line.invoiceDetailId}>
+                            <TableCell className="font-medium text-text-primary">
+                              {line.concept || `Invoice line #${line.invoiceDetailId}`}
+                            </TableCell>
+                            <TableCell>{line.lineType}</TableCell>
+                            <TableCell>{line.quantity}</TableCell>
+                            <TableCell>{formatCurrency(line.unitPrice)}</TableCell>
+                            <TableCell>{formatCurrency(line.subtotal)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
                 <CardTitle>Payment summary</CardTitle>
               </CardHeader>
               <CardContent>
@@ -784,23 +862,7 @@ export function ReceptionistInvoicesPage() {
                   <ErrorState
                     title="Unable to load payment summary"
                     message={paymentSummaryError}
-                    onRetry={() => {
-                      if (selectedInvoiceId) {
-                        setPaymentSummaryLoading(true);
-                        receptionistInvoicesApi
-                          .getPaymentSummary(selectedInvoiceId)
-                          .then((response) => {
-                            setPaymentSummary(response.data);
-                            setPaymentSummaryError(null);
-                          })
-                          .catch((error) => {
-                            setPaymentSummaryError(getErrorMessage(error));
-                          })
-                          .finally(() => {
-                            setPaymentSummaryLoading(false);
-                          });
-                      }
-                    }}
+                    onRetry={retrySelectedInvoiceDetail}
                   />
                   ) : paymentSummary ? (
                     <div className="space-y-3 text-sm">
@@ -1043,11 +1105,11 @@ export function ReceptionistInvoicesPage() {
               {estimatedTotal === null ? 'Invalid' : formatCurrency(estimatedTotal)}
             </p>
             <p className="text-text-secondary">
-              Only approved services and approved parts will be invoiced.
+              This service order has no approved billable items yet. Ask the client to review pending approvals before generating the invoice.
             </p>
             {serviceOrderDetail && !hasBillableItems ? (
               <p className="text-danger">
-                This order has no approved services or approved parts to invoice.
+                This service order has no approved billable items yet. Ask the client to review pending approvals before generating the invoice.
               </p>
             ) : null}
           </div>

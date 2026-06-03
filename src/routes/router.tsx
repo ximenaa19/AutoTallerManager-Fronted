@@ -9,6 +9,10 @@ import { ChangePasswordPage } from '@/features/account/pages/ChangePasswordPage'
 import { AdminDashboardPage } from '@/pages/dashboards/AdminDashboardPage';
 import { ClientDashboardPage } from '@/pages/dashboards/ClientDashboardPage';
 import { MechanicDashboardPage } from '@/pages/dashboards/MechanicDashboardPage';
+import { ClientApprovalsPage } from '@/features/client/pages/ClientApprovalsPage';
+import { ClientInvoicesPage } from '@/features/client/pages/ClientInvoicesPage';
+import { ClientServiceOrdersPage } from '@/features/client/pages/ClientServiceOrdersPage';
+import { ClientVehiclesPage } from '@/features/client/pages/ClientVehiclesPage';
 import { ReceptionistDashboardPage } from '@/features/receptionist/pages/ReceptionistDashboardPage';
 import { ReceptionistClientsPage } from '@/features/receptionist/pages/ReceptionistClientsPage';
 import { ReceptionistCreateClientPage } from '@/features/receptionist/pages/ReceptionistCreateClientPage';
@@ -147,10 +151,10 @@ export const router = createBrowserRouter([
                 element: <Navigate to={ROUTES.CLIENT_DASHBOARD} replace />,
               },
               { path: ROUTES.CLIENT_DASHBOARD, element: <ClientDashboardPage /> },
-              { path: ROUTES.CLIENT_VEHICLES, element: comingSoon },
-              { path: ROUTES.CLIENT_SERVICE_ORDERS, element: comingSoon },
-              { path: ROUTES.CLIENT_APPROVALS, element: comingSoon },
-              { path: ROUTES.CLIENT_INVOICES, element: comingSoon },
+              { path: ROUTES.CLIENT_VEHICLES, element: <ClientVehiclesPage /> },
+              { path: ROUTES.CLIENT_SERVICE_ORDERS, element: <ClientServiceOrdersPage /> },
+              { path: ROUTES.CLIENT_APPROVALS, element: <ClientApprovalsPage /> },
+              { path: ROUTES.CLIENT_INVOICES, element: <ClientInvoicesPage /> },
             ],
           },
           {
