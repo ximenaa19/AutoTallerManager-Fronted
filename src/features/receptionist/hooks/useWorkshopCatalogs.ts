@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getErrorMessage } from '@/api/apiError';
 import { receptionistClientsApi } from '@/features/receptionist/api/receptionistClients.api';
-import type { WorkshopCatalogsDto } from '@/features/admin/serviceOrders/types/workshopIntake.types';
+import type { ReceptionistWorkshopCatalogsDto } from '@/features/receptionist/types/receptionistClients.types';
 
 export interface ReceptionistWorkshopCatalogLookups {
   serviceTypeNameById: Map<number, string>;
   orderStatusNameById: Map<number, string>;
-  serviceTypes: WorkshopCatalogsDto['serviceTypes'];
-  orderStatuses: WorkshopCatalogsDto['orderStatuses'];
+  serviceTypes: ReceptionistWorkshopCatalogsDto['serviceTypes'];
+  orderStatuses: ReceptionistWorkshopCatalogsDto['orderStatuses'];
   orderStatusIds: number[];
 }
 

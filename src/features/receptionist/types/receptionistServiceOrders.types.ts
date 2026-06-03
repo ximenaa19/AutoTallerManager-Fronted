@@ -3,7 +3,16 @@ export interface ServiceOrderSearchResultDto {
   vehicleId: number;
   orderStatusId: number;
   entryDate: string;
+  estimatedDeliveryDate?: string;
   generalDescription?: string;
+}
+
+export interface ReceptionistServiceOrderTableRow extends ServiceOrderSearchResultDto {
+  vehiclePlate?: string;
+  customerName?: string;
+  customerDocumentNumber?: string;
+  customerEmail?: string;
+  customerPhoneNumber?: string;
 }
 
 export interface ServiceOrderInventorySummaryDto {
@@ -41,6 +50,7 @@ export interface ServiceOrderFullPartSummaryDto {
 export interface ServiceOrderFullDetailDto {
   serviceOrderId: number;
   vehicleId: number;
+  vehiclePlate?: string;
   orderStatusId: number;
   entryDate: string;
   estimatedDeliveryDate?: string;

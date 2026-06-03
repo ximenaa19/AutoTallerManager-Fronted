@@ -8,7 +8,7 @@ export interface ServiceOrderServiceLineInput {
   key: string;
   serviceTypeId: number;
   description: string;
-  laborCost: number;
+  laborCost: number | '';
 }
 
 export interface ServiceOrderServicesEditorProps {
@@ -75,11 +75,12 @@ export function ServiceOrderServicesEditor({
               step="0.01"
               required
               value={service.laborCost}
-              onChange={(event) =>
+              onChange={(event) => {
+                const nextValue = event.target.value;
                 onUpdateLine(service.key, {
-                  laborCost: Number(event.target.value),
-                })
-              }
+                  laborCost: nextValue === '' ? '' : Number(nextValue),
+                });
+              }}
               disabled={disabled}
             />
             <div className="sm:col-span-2">

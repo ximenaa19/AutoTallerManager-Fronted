@@ -7,6 +7,10 @@ import type {
 } from '@/features/receptionist/types/receptionistServiceOrders.types';
 
 export const receptionistServiceOrdersApi = {
+  getAll() {
+    return httpClient.get<ServiceOrderSearchResultDto[]>('/api/service-orders');
+  },
+
   searchServiceOrders(term: string) {
     return httpClient.get<ServiceOrderSearchResultDto[]>(
       '/api/search/service-orders',

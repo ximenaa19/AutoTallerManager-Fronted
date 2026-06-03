@@ -37,15 +37,7 @@ function resolvePendingAmount(summary: InvoicePaymentSummaryDto | null): number 
 }
 
 function resolvePaidAmount(summary: InvoicePaymentSummaryDto | null): number {
-  if (!summary) {
-    return 0;
-  }
-
-  if (typeof summary.completedPaidAmount === 'number') {
-    return summary.completedPaidAmount;
-  }
-
-  return summary.paidAmount ?? 0;
+  return summary?.completedPaidAmount ?? 0;
 }
 
 function resolveRefundAmount(summary: InvoicePaymentSummaryDto | null): number {
@@ -57,7 +49,14 @@ function resolveRefundAmount(summary: InvoicePaymentSummaryDto | null): number {
 }
 
 function isCardMethod(methodName: string | undefined) {
-  return Boolean(methodName && methodName.toLowerCase().includes('card'));
+  if (!methodName) {
+    return false;
+  }
+
+  const normalizedName = methodName.toLowerCase();
+  return ['card', 'credit', 'debit', 'tarjeta', 'credito', 'crédito', 'debito', 'débito'].some(
+    (term) => normalizedName.includes(term),
+  );
 }
 
 export function ReceptionistPaymentsPage() {
@@ -131,34 +130,22 @@ export function ReceptionistPaymentsPage() {
     );
   }, [invoiceLookups.lookups.invoiceStatusNameById, selectedInvoice]);
 
-  const summaryStatusLabel = useMemo(() => {
-    if (!paymentSummary) {
-      return '—';
-    }
-
-    if (paymentSummary.invoiceStatusId == null) {
-      return '—';
-    }
-
-    return (
-      paymentSummaryStatusLabel(paymentSummary.invoiceStatusId) ??
-      `Status #${paymentSummary.invoiceStatusId}`
-    );
-
-    function paymentSummaryStatusLabel(invoiceStatusId: number): string | undefined {
-      return (
-        invoiceLookups.lookups.invoiceStatusNameById.get(invoiceStatusId) ??
-        undefined
-      );
-    }
-  }, [paymentSummary, invoiceLookups.lookups.invoiceStatusNameById]);
-
   const selectedPaymentMethodId = paymentForm.getPaymentMethodIdNumber();
   const selectedPaymentMethodName = paymentMethodById.get(selectedPaymentMethodId);
   const selectedIsCardMethod = isCardMethod(selectedPaymentMethodName);
 
   const selectedInvoiceId = selectedInvoice?.invoiceId ?? null;
   const pendingAmount = resolvePendingAmount(paymentSummary);
+  const parsedAmount = Number(paymentForm.amount);
+  const amountIsValid =
+    paymentForm.amount.trim().length > 0 &&
+    Number.isFinite(parsedAmount) &&
+    parsedAmount > 0;
+  const cardFieldsAreValid =
+    !selectedIsCardMethod ||
+    (Number(paymentForm.cardTypeId) > 0 &&
+      paymentForm.lastFourDigits.trim().replace(/\D/g, '').length === 4);
+  const invoiceIsFullyPaid = pendingAmount !== null && pendingAmount <= 0;
 
   const clearPaymentMessages = useCallback(() => {
     setRecordError(null);
@@ -297,8 +284,10 @@ export function ReceptionistPaymentsPage() {
     Boolean(selectedInvoiceId) &&
     !recordLoading &&
     paymentForm.paymentMethodId !== '' &&
-    !paymentForm.isAmountEmpty &&
-    !paymentForm.isPendingAmountExceeding(pendingAmount);
+    amountIsValid &&
+    !invoiceIsFullyPaid &&
+    !paymentForm.isPendingAmountExceeding(pendingAmount) &&
+    cardFieldsAreValid;
 
   return (
     <div className="space-y-6">
@@ -338,7 +327,8 @@ export function ReceptionistPaymentsPage() {
           <Input
             label="Invoice search"
             name="invoice-search"
-            placeholder="Search by invoice number, invoice ID, or service order"
+            placeholder="Search by invoice number, invoice ID, or service order ID"
+            hint="Search by invoice number, invoice ID, or service order ID."
             value={invoiceSearch.term}
             onChange={(event) => handleInvoiceSearchChange(event.target.value)}
           />
@@ -364,7 +354,7 @@ export function ReceptionistPaymentsPage() {
           ) : invoiceSearch.term === '' ? (
             <EmptyState
               title="Search invoices to continue"
-              description="Use invoice number, invoice ID, or service order number."
+              description="Search by invoice number, invoice ID, or service order ID."
               icon={<Search className="size-6" />}
             />
           ) : invoiceSearch.hasSearched && invoiceSearch.results.length === 0 ? (
@@ -381,6 +371,7 @@ export function ReceptionistPaymentsPage() {
                     <TableHead>Service order</TableHead>
                     <TableHead>Issued</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Total</TableHead>
                     <TableHead className="w-36 text-right">Select</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -392,7 +383,16 @@ export function ReceptionistPaymentsPage() {
                         key={invoice.invoiceId}
                         className={isSelected ? 'bg-bg-elevated' : undefined}
                       >
-                        <TableCell>#{invoice.invoiceId}</TableCell>
+                        <TableCell>
+                          <div className="grid gap-0.5">
+                            <span className="font-medium text-text-primary">
+                              {invoice.invoiceNumber}
+                            </span>
+                            <span className="text-xs text-text-secondary">
+                              Invoice #{invoice.invoiceId}
+                            </span>
+                          </div>
+                        </TableCell>
                         <TableCell>#{invoice.serviceOrderId}</TableCell>
                         <TableCell>{formatDateTime(invoice.invoiceDate)}</TableCell>
                         <TableCell>
@@ -400,6 +400,7 @@ export function ReceptionistPaymentsPage() {
                             invoice.invoiceStatusId,
                           ) ?? `Status #${invoice.invoiceStatusId}`}
                         </TableCell>
+                        <TableCell>{formatCurrency(invoice.total)}</TableCell>
                         <TableCell className="text-right">
                           <Button
                             size="sm"
@@ -420,7 +421,48 @@ export function ReceptionistPaymentsPage() {
       </Card>
 
       {selectedInvoice ? (
-        <div className="grid gap-6 xl:grid-cols-2">
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>Selected invoice</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
+              <p>
+                Invoice ID:{' '}
+                <span className="font-medium text-text-primary">#{selectedInvoice.invoiceId}</span>
+              </p>
+              <p>
+                Invoice number:{' '}
+                <span className="font-medium text-text-primary">
+                  {selectedInvoice.invoiceNumber}
+                </span>
+              </p>
+              <p>
+                Service order:{' '}
+                <span className="font-medium text-text-primary">
+                  #{selectedInvoice.serviceOrderId}
+                </span>
+              </p>
+              <p>
+                Total:{' '}
+                <span className="font-medium text-text-primary">
+                  {formatCurrency(selectedInvoice.total)}
+                </span>
+              </p>
+              <p>
+                Issued:{' '}
+                <span className="font-medium text-text-primary">
+                  {formatDateTime(selectedInvoice.invoiceDate)}
+                </span>
+              </p>
+              <p>
+                Status:{' '}
+                <span className="font-medium text-text-primary">{invoiceStatusLabel}</span>
+              </p>
+            </CardContent>
+          </Card>
+
+          <div className="grid gap-6 xl:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>Payment summary</CardTitle>
@@ -443,10 +485,6 @@ export function ReceptionistPaymentsPage() {
                     <p>
                       Invoice:{' '}
                       <span className="font-medium">{selectedInvoice.invoiceNumber}</span>
-                    </p>
-                    <p>
-                      Status:{' '}
-                      <span className="font-medium">{summaryStatusLabel}</span>
                     </p>
                     <p>
                       Total:{' '}
@@ -519,6 +557,14 @@ export function ReceptionistPaymentsPage() {
               <CardTitle>Record payment</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {paymentCatalogs.error ? (
+                <ErrorState
+                  title="Unable to load payment catalogs"
+                  message={paymentCatalogs.error}
+                  onRetry={paymentCatalogs.retry}
+                />
+              ) : null}
+
               <Input
                 label="Amount"
                 name="payment-amount"
@@ -527,6 +573,13 @@ export function ReceptionistPaymentsPage() {
                 step="0.01"
                 value={paymentForm.amount}
                 onChange={(event) => paymentForm.setAmount(event.target.value)}
+                error={
+                  paymentForm.amount.trim() && !amountIsValid
+                    ? 'Amount must be greater than 0.'
+                    : paymentForm.isPendingAmountExceeding(pendingAmount)
+                      ? 'Amount cannot exceed pending amount.'
+                      : undefined
+                }
                 required
               />
 
@@ -571,6 +624,10 @@ export function ReceptionistPaymentsPage() {
               {selectedIsCardMethod ? (
                 <div className="space-y-4 rounded-md border border-border bg-bg-elevated p-4">
                   <p className="text-sm font-medium text-text-primary">Card details</p>
+                  <p className="text-xs text-text-secondary">
+                    Card fields are shown because the selected payment method name indicates card,
+                    credit, debit, or tarjeta.
+                  </p>
                   <Select
                     name="payment-card-type"
                     label="Card type"
@@ -616,6 +673,15 @@ export function ReceptionistPaymentsPage() {
                 </div>
               ) : null}
 
+              {invoiceIsFullyPaid ? (
+                <div
+                  role="status"
+                  className="rounded-lg border border-warning/30 bg-warning-muted/30 px-3 py-2 text-sm text-warning"
+                >
+                  This invoice is already fully paid.
+                </div>
+              ) : null}
+
               <div className="border-t border-border pt-4">
                 <Button
                   onClick={() => {
@@ -629,7 +695,8 @@ export function ReceptionistPaymentsPage() {
               </div>
             </CardContent>
           </Card>
-        </div>
+          </div>
+        </>
       ) : null}
     </div>
   );

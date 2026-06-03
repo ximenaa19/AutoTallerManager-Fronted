@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useMemo, useRef, useState, type FormEvent } from 'react';
 import { CalendarCheck, Search } from 'lucide-react';
 import { getErrorMessage } from '@/api/apiError';
+import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -30,12 +31,25 @@ function createEmptyServiceLine(): ServiceOrderServiceLineInput {
     key: crypto.randomUUID(),
     serviceTypeId: 0,
     description: '',
-    laborCost: 0,
+    laborCost: '',
   };
 }
 
 function toIsoDate(value: string): string {
   return `${value}T00:00:00.000Z`;
+}
+
+function parseLaborCost(value: ServiceOrderServiceLineInput['laborCost']): number | null {
+  if (value === '') {
+    return null;
+  }
+
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return null;
+  }
+
+  return parsed;
 }
 
 export function CreateServiceOrderIntakeForm({
@@ -44,9 +58,11 @@ export function CreateServiceOrderIntakeForm({
 }: CreateServiceOrderIntakeFormProps) {
   const serviceOrderCatalogs = useWorkshopCatalogs();
   const clientSearch = useReceptionistClientSearch({ minTermLength: 2 });
+  const vehicleRequestIdRef = useRef(0);
 
   const [selectedClient, setSelectedClient] = useState<ClientSearchResultDto | null>(null);
   const [vehicleResults, setVehicleResults] = useState<ClientVehicleResult[]>([]);
+  const [vehicleResultsClientId, setVehicleResultsClientId] = useState<number | null>(null);
   const [isLoadingVehicles, setIsLoadingVehicles] = useState(false);
   const [vehicleError, setVehicleError] = useState<string | null>(null);
   const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null);
@@ -68,38 +84,60 @@ export function CreateServiceOrderIntakeForm({
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const loadClientVehicles = useCallback(
-    async (client: ClientSearchResultDto | null) => {
-      if (!client) {
-        setVehicleResults([]);
-        setSelectedVehicleId(null);
+  const loadVehiclesForClient = useCallback(async (personId: number) => {
+    const requestId = vehicleRequestIdRef.current + 1;
+    vehicleRequestIdRef.current = requestId;
+
+    setIsLoadingVehicles(true);
+    setVehicleError(null);
+
+    try {
+      const response = await receptionistClientsApi.getClientVehicles(personId);
+
+      if (vehicleRequestIdRef.current !== requestId) {
         return;
       }
 
-      setIsLoadingVehicles(true);
-      setVehicleError(null);
-      try {
-        const response = await receptionistClientsApi.getClientVehicles(client.personId);
-        setVehicleResults(response.data as ClientVehicleResult[]);
-      } catch (err) {
-        setVehicleError(getErrorMessage(err));
-        setVehicleResults([]);
-      } finally {
+      setVehicleResults(response.data as ClientVehicleResult[]);
+      setVehicleResultsClientId(personId);
+    } catch (err) {
+      if (vehicleRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      setVehicleError(getErrorMessage(err));
+      setVehicleResultsClientId(null);
+    } finally {
+      if (vehicleRequestIdRef.current === requestId) {
         setIsLoadingVehicles(false);
       }
-    },
-    [],
-  );
-
-  useEffect(() => {
-    void loadClientVehicles(selectedClient);
-  }, [loadClientVehicles, selectedClient]);
+    }
+  }, []);
 
   const selectedVehicle = useMemo<ClientVehicleResult | null>(() => {
     return vehicleResults.find((vehicle) => vehicle.vehicleId === selectedVehicleId) ?? null;
   }, [vehicleResults, selectedVehicleId]);
 
-  const servicesTotalLabor = services.reduce((acc, line) => acc + (Number(line.laborCost) || 0), 0);
+  const visibleVehicleResults =
+    selectedClient && vehicleResultsClientId === selectedClient.personId ? vehicleResults : [];
+
+  const serviceLinesWithParsedCost = useMemo(
+    () =>
+      services.map((service) => ({
+        ...service,
+        parsedLaborCost: parseLaborCost(service.laborCost),
+      })),
+    [services],
+  );
+
+  const validServiceLines = serviceLinesWithParsedCost.filter(
+    (line) => line.serviceTypeId > 0 && line.parsedLaborCost !== null,
+  );
+
+  const servicesTotalLabor = serviceLinesWithParsedCost.reduce(
+    (acc, line) => acc + (line.parsedLaborCost ?? 0),
+    0,
+  );
 
   const serviceTypeOptions = useMemo(
     () => serviceOrderCatalogs.lookups.serviceTypes,
@@ -126,11 +164,43 @@ export function CreateServiceOrderIntakeForm({
   const handleClientSearchTermChange = (value: string) => {
     clientSearch.setTerm(value);
     if (selectedClient) {
+      vehicleRequestIdRef.current += 1;
       setSelectedClient(null);
       setVehicleResults([]);
+      setVehicleResultsClientId(null);
       setSelectedVehicleId(null);
+      setVehicleError(null);
+      setIsLoadingVehicles(false);
     }
   };
+
+  const handleSelectClient = useCallback(
+    (client: ClientSearchResultDto) => {
+      if (selectedClient?.personId === client.personId) {
+        return;
+      }
+
+      setSelectedClient(client);
+      setSelectedVehicleId(null);
+      setVehicleError(null);
+      void loadVehiclesForClient(client.personId);
+    },
+    [loadVehiclesForClient, selectedClient?.personId],
+  );
+
+  const hasInvalidServiceLines =
+    services.length === 0 ||
+    serviceLinesWithParsedCost.some(
+      (line) => line.serviceTypeId <= 0 || line.parsedLaborCost === null,
+    );
+
+  const canSubmit =
+    !isSubmitting &&
+    !isLoadingVehicles &&
+    !serviceOrderCatalogs.isLoading &&
+    Boolean(selectedClient) &&
+    Boolean(selectedVehicleId) &&
+    !hasInvalidServiceLines;
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -166,28 +236,14 @@ export function CreateServiceOrderIntakeForm({
       return;
     }
 
-    const validServices = services.filter(
-      (line) =>
-        line.serviceTypeId > 0 &&
-        Number.isFinite(line.laborCost) &&
-        line.laborCost >= 0,
-    );
-
-    if (validServices.length === 0) {
-      setFormError('Add at least one valid service with type and labor cost.');
+    if (services.length === 0) {
+      setFormError('Add at least one service.');
       return;
     }
 
-    for (const line of validServices) {
-      if (line.laborCost < 0) {
-        setFormError('Labor cost must be 0 or greater.');
-        return;
-      }
-
-      if (!line.serviceTypeId || line.serviceTypeId <= 0) {
-        setFormError('Each service must have a type.');
-        return;
-      }
+    if (hasInvalidServiceLines) {
+      setFormError('Complete every service line or remove the incomplete ones.');
+      return;
     }
 
     const payload: CreateWorkshopIntakeRequest = {
@@ -203,10 +259,10 @@ export function CreateServiceOrderIntakeForm({
       toolboxDescription: hasToolbox ? toolboxDescription.trim() || undefined : undefined,
       ownershipCardDelivered,
       inventoryObservations: inventoryObservations.trim() || undefined,
-      services: validServices.map((line) => ({
+      services: serviceLinesWithParsedCost.map((line) => ({
         serviceTypeId: line.serviceTypeId,
         description: line.description.trim() || undefined,
-        laborCost: line.laborCost,
+        laborCost: line.parsedLaborCost ?? 0,
       })),
     };
 
@@ -217,6 +273,7 @@ export function CreateServiceOrderIntakeForm({
       onSubmitSuccess(createdOrderId);
       setSelectedClient(null);
       setVehicleResults([]);
+      setVehicleResultsClientId(null);
       setSelectedVehicleId(null);
       setServices([createEmptyServiceLine()]);
       setEntryDate(new Date().toISOString().slice(0, 10));
@@ -287,27 +344,28 @@ export function CreateServiceOrderIntakeForm({
                   key={client.personId}
                   className={`border-b border-border last:border-b-0 ${
                     selectedClient?.personId === client.personId
-                      ? 'bg-bg-muted'
+                      ? 'border-l-4 border-l-accent bg-accent-muted/30'
                       : 'hover:bg-bg-muted/40'
                   }`}
                 >
                   <button
                     type="button"
-                    className="flex w-full flex-col gap-0.5 px-4 py-3 text-left transition"
-                    onClick={() => {
-                      setSelectedClient(client);
-                      setVehicleResults([]);
-                      setSelectedVehicleId(null);
-                    }}
+                    className="flex w-full flex-col gap-1 px-4 py-3 text-left transition"
+                    onClick={() => handleSelectClient(client)}
+                    aria-pressed={selectedClient?.personId === client.personId}
                   >
-                    <span className="text-sm font-medium text-text-primary">
+                    <span className="flex flex-wrap items-center gap-2 text-sm font-medium text-text-primary">
                       {client.fullName}
+                      {selectedClient?.personId === client.personId ? (
+                        <Badge variant="accent">Selected</Badge>
+                      ) : null}
                     </span>
                     <span className="text-xs text-text-secondary">
                       #{client.personId} · {client.documentNumber || 'No document'}
                     </span>
                     <span className="text-xs text-text-secondary">
-                      {client.primaryEmail || 'No email'}
+                      {[client.primaryEmail, client.primaryPhoneNumber].filter(Boolean).join(' / ') ||
+                        'No contact data'}
                     </span>
                   </button>
                 </li>
@@ -334,33 +392,41 @@ export function CreateServiceOrderIntakeForm({
           {vehicleError ? <p className="text-xs text-danger">{vehicleError}</p> : null}
           {selectedClient && !isLoadingVehicles && !vehicleError && (
             <>
-              {vehicleResults.length === 0 ? (
+              {visibleVehicleResults.length === 0 ? (
                 <p className="text-sm text-text-secondary">
                   No vehicles available for this customer.
                 </p>
               ) : (
                 <ul className="max-h-48 overflow-y-auto rounded-lg border border-border">
-                  {vehicleResults.map((vehicle) => (
+                  {visibleVehicleResults.map((vehicle) => (
                     <li
                       key={vehicle.vehicleId}
                       className={`border-b border-border last:border-b-0 ${
                         selectedVehicleId === vehicle.vehicleId
-                          ? 'bg-bg-muted'
+                          ? 'border-l-4 border-l-accent bg-accent-muted/30'
                           : 'hover:bg-bg-muted/40'
                       }`}
                     >
                       <button
                         type="button"
-                        className="flex w-full flex-col gap-0.5 px-4 py-3 text-left transition"
+                        className="flex w-full flex-col gap-1 px-4 py-3 text-left transition"
                         onClick={() => setSelectedVehicleId(vehicle.vehicleId)}
+                        aria-pressed={selectedVehicleId === vehicle.vehicleId}
                       >
-                        <span className="text-sm font-medium text-text-primary">
+                        <span className="flex flex-wrap items-center gap-2 text-sm font-medium text-text-primary">
                           {vehicle.plate ? `${vehicle.plate} · ` : ''}
                           Year {vehicle.year}
+                          {selectedVehicleId === vehicle.vehicleId ? (
+                            <Badge variant="accent">Selected vehicle</Badge>
+                          ) : null}
                         </span>
                         <span className="text-xs text-text-secondary">
                           #{vehicle.vehicleId} · {vehicle.vin}
                           {vehicle.color ? ` · ${vehicle.color}` : ''}
+                        </span>
+                        <span className="text-xs text-text-secondary">
+                          Mileage {vehicle.mileage.toLocaleString()} km -{' '}
+                          {vehicle.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </button>
                     </li>
@@ -423,11 +489,18 @@ export function CreateServiceOrderIntakeForm({
       <ServiceOrderSummaryPanel
         selectedClient={selectedClient}
         selectedVehicle={selectedVehicle}
-        serviceCount={services.filter(
-          (service) => service.serviceTypeId > 0 && service.laborCost >= 0,
-        ).length}
+        services={services}
+        serviceTypeNameById={serviceOrderCatalogs.lookups.serviceTypeNameById}
+        serviceCount={validServiceLines.length}
         servicesTotalLabor={servicesTotalLabor}
+        entryDate={entryDate}
         estimatedDeliveryDate={estimatedDeliveryDate}
+        ownershipCardDelivered={ownershipCardDelivered}
+        hasScratches={hasScratches}
+        scratchesDescription={scratchesDescription}
+        hasToolbox={hasToolbox}
+        toolboxDescription={toolboxDescription}
+        inventoryObservations={inventoryObservations}
       />
 
       <Card>
@@ -449,6 +522,11 @@ export function CreateServiceOrderIntakeForm({
                 onRemoveLine={removeServiceLine}
                 disabled={isSubmitting || serviceOrderCatalogs.isLoading}
               />
+              {hasInvalidServiceLines ? (
+                <p className="mt-3 text-xs text-warning">
+                  Complete every service line or remove the incomplete ones.
+                </p>
+              ) : null}
             </>
           )}
         </CardContent>
@@ -462,7 +540,7 @@ export function CreateServiceOrderIntakeForm({
           type="submit"
           leftIcon={<CalendarCheck className="size-4" />}
           isLoading={isSubmitting}
-          disabled={isSubmitting || serviceOrderCatalogs.isLoading}
+          disabled={!canSubmit}
         >
           Create service order
         </Button>

@@ -37,7 +37,11 @@ import type {
   InvoicePaymentSummaryDto,
 } from '@/features/receptionist/types/receptionistInvoices.types';
 import { RECEPTIONIST_INVOICE_STATUS_IDS } from '@/features/receptionist/types/receptionistInvoices.types';
-import type { ServiceOrderFullDetailDto } from '@/features/receptionist/types/receptionistServiceOrders.types';
+import type {
+  ServiceOrderFullDetailDto,
+  ServiceOrderFullPartSummaryDto,
+  ServiceOrderFullServiceSummaryDto,
+} from '@/features/receptionist/types/receptionistServiceOrders.types';
 
 function formatInvoiceStatusLabel(
   invoiceStatusId: number,
@@ -92,29 +96,34 @@ function parseTaxRateValue(value: string): number | null {
   return parsed;
 }
 
-function getApprovedServicesSubtotal(serviceOrderDetail: ServiceOrderFullDetailDto | null): number {
-  if (!serviceOrderDetail) {
-    return 0;
-  }
+function getApprovedServices(
+  serviceOrderDetail: ServiceOrderFullDetailDto | null,
+): ServiceOrderFullServiceSummaryDto[] {
+  return serviceOrderDetail?.services.filter((service) => service.customerApproved === true) ?? [];
+}
 
-  return serviceOrderDetail.services
-    .filter((service) => service.customerApproved === true)
-    .reduce((total, service) => total + service.laborCost, 0);
+function getApprovedParts(
+  serviceOrderDetail: ServiceOrderFullDetailDto | null,
+): ServiceOrderFullPartSummaryDto[] {
+  return (
+    serviceOrderDetail?.services.flatMap(
+      (service) => service.parts?.filter((part) => part.customerApproved === true) ?? [],
+    ) ?? []
+  );
+}
+
+function getApprovedServicesSubtotal(serviceOrderDetail: ServiceOrderFullDetailDto | null): number {
+  return getApprovedServices(serviceOrderDetail).reduce(
+    (total, service) => total + service.laborCost,
+    0,
+  );
 }
 
 function getApprovedPartsSubtotal(serviceOrderDetail: ServiceOrderFullDetailDto | null): number {
-  if (!serviceOrderDetail) {
-    return 0;
-  }
-
-  return serviceOrderDetail.services.reduce((total, service) => {
-    const approvedPartsSubtotal =
-      service.parts
-        ?.filter((part) => part.customerApproved === true)
-        .reduce((partsTotal, part) => partsTotal + part.subtotal, 0) ?? 0;
-
-    return total + approvedPartsSubtotal;
-  }, 0);
+  return getApprovedParts(serviceOrderDetail).reduce(
+    (total, part) => total + part.subtotal,
+    0,
+  );
 }
 
 function getEstimatedSubtotal(serviceOrderDetail: ServiceOrderFullDetailDto | null): number {
@@ -405,12 +414,21 @@ export function ReceptionistInvoicesPage() {
   );
 
   const isSearchingInvoices = invoiceSearch.term.length >= invoiceSearch.minTermLength;
+  const approvedServices = useMemo(
+    () => getApprovedServices(serviceOrderDetail),
+    [serviceOrderDetail],
+  );
+  const approvedParts = useMemo(
+    () => getApprovedParts(serviceOrderDetail),
+    [serviceOrderDetail],
+  );
   const taxRateValue = parseTaxRateValue(generateTaxRate);
   const estimatedSubtotal = getEstimatedSubtotal(serviceOrderDetail);
   const estimatedTaxAmount =
     taxRateValue === null ? null : (estimatedSubtotal * taxRateValue) / 100;
   const estimatedTotal =
     estimatedTaxAmount === null ? null : estimatedSubtotal + estimatedTaxAmount;
+  const hasBillableItems = estimatedSubtotal > 0;
 
   const refreshInvoices = useCallback(() => {
     setRefreshToken((value) => value + 1);
@@ -580,6 +598,11 @@ export function ReceptionistInvoicesPage() {
       return;
     }
 
+    if (!hasBillableItems) {
+      setGenerateError('Only approved services and approved parts will be invoiced.');
+      return;
+    }
+
     setGenerateLoading(true);
     setGenerateError(null);
 
@@ -607,6 +630,7 @@ export function ReceptionistInvoicesPage() {
     serviceOrderToGenerate,
     taxRateValue,
     estimatedTaxAmount,
+    hasBillableItems,
     generateObservations,
     closeGenerateModal,
     refreshInvoices,
@@ -655,7 +679,8 @@ export function ReceptionistInvoicesPage() {
         <Input
           label="Search invoices"
           name="invoice-search"
-          placeholder="Search by invoice number, ID, or service order"
+          placeholder="Search by invoice number, invoice ID, or service order ID"
+          hint="Search by invoice number, invoice ID, or service order ID."
           value={invoiceSearch.term}
           onChange={(event) => invoiceSearch.setTerm(event.target.value)}
         />
@@ -914,25 +939,74 @@ export function ReceptionistInvoicesPage() {
               <CardHeader>
                 <CardTitle>Selected order #{serviceOrderDetail.serviceOrderId}</CardTitle>
               </CardHeader>
-              <CardContent className="text-sm text-text-secondary">
-                <p>Vehicle #{serviceOrderDetail.vehicleId}</p>
-                <p>Entry date: {formatDateTime(serviceOrderDetail.entryDate)}</p>
-                <p>
-                  Estimated delivery:{' '}
-                  {serviceOrderDetail.estimatedDeliveryDate
-                    ? formatDateTime(serviceOrderDetail.estimatedDeliveryDate)
-                    : '—'}
-                </p>
-                <p>Description: {serviceOrderDetail.generalDescription || '—'}</p>
-                <p>Services: {serviceOrderDetail.services.length}</p>
-                <p>
-                  Approved services subtotal:{' '}
-                  {formatCurrency(getApprovedServicesSubtotal(serviceOrderDetail))}
-                </p>
-                <p>
-                  Approved parts subtotal:{' '}
-                  {formatCurrency(getApprovedPartsSubtotal(serviceOrderDetail))}
-                </p>
+              <CardContent className="space-y-4 text-sm text-text-secondary">
+                <div className="grid gap-1">
+                  <p>Vehicle #{serviceOrderDetail.vehicleId}</p>
+                  <p>Entry date: {formatDateTime(serviceOrderDetail.entryDate)}</p>
+                  <p>
+                    Estimated delivery:{' '}
+                    {serviceOrderDetail.estimatedDeliveryDate
+                      ? formatDateTime(serviceOrderDetail.estimatedDeliveryDate)
+                      : '—'}
+                  </p>
+                  <p>Description: {serviceOrderDetail.generalDescription || '—'}</p>
+                  <p>Services: {serviceOrderDetail.services.length}</p>
+                  <p>
+                    Approved services subtotal:{' '}
+                    {formatCurrency(getApprovedServicesSubtotal(serviceOrderDetail))}
+                  </p>
+                  <p>
+                    Approved parts subtotal:{' '}
+                    {formatCurrency(getApprovedPartsSubtotal(serviceOrderDetail))}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="font-medium text-text-primary">Approved labor items</p>
+                  {approvedServices.length === 0 ? (
+                    <p>No approved services available for invoicing.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {approvedServices.map((service) => (
+                        <div
+                          key={service.orderServiceId}
+                          className="rounded-md border border-border bg-bg-elevated px-3 py-2"
+                        >
+                          <p className="font-medium text-text-primary">
+                            {workshopCatalogs.lookups.serviceTypeNameById.get(
+                              service.serviceTypeId,
+                            ) ?? `Service type #${service.serviceTypeId}`}
+                          </p>
+                          <p>{service.description || 'No description'}</p>
+                          <p>{formatCurrency(service.laborCost)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <p className="font-medium text-text-primary">Approved part items</p>
+                  {approvedParts.length === 0 ? (
+                    <p>No approved parts available for invoicing.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {approvedParts.map((part) => (
+                        <div
+                          key={part.orderServicePartId}
+                          className="rounded-md border border-border bg-bg-elevated px-3 py-2"
+                        >
+                          <p className="font-medium text-text-primary">Part #{part.partId}</p>
+                          <p>
+                            Qty {part.quantity} / Unit{' '}
+                            {formatCurrency(part.appliedUnitPrice)}
+                          </p>
+                          <p>{formatCurrency(part.subtotal)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           ) : null}
@@ -971,6 +1045,11 @@ export function ReceptionistInvoicesPage() {
             <p className="text-text-secondary">
               Only approved services and approved parts will be invoiced.
             </p>
+            {serviceOrderDetail && !hasBillableItems ? (
+              <p className="text-danger">
+                This order has no approved services or approved parts to invoice.
+              </p>
+            ) : null}
           </div>
 
           <Textarea
@@ -999,7 +1078,12 @@ export function ReceptionistInvoicesPage() {
                 void submitGenerateInvoice();
               }}
               isLoading={generateLoading}
-              disabled={!serviceOrderToGenerate || taxRateValue === null || serviceOrderDetailLoading}
+              disabled={
+                !serviceOrderToGenerate ||
+                taxRateValue === null ||
+                serviceOrderDetailLoading ||
+                !hasBillableItems
+              }
               leftIcon={<Send className="size-4" />}
             >
               Generate Invoice

@@ -6,11 +6,11 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { formatDateTime } from '@/utils/format';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
-import type { ServiceOrderSearchResultDto } from '@/features/receptionist/types/receptionistServiceOrders.types';
+import type { ReceptionistServiceOrderTableRow } from '@/features/receptionist/types/receptionistServiceOrders.types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 
 export interface ReceptionistServiceOrdersTableProps {
-  orders: ServiceOrderSearchResultDto[];
+  orders: ReceptionistServiceOrderTableRow[];
   isLoading: boolean;
   error: string | null;
   hasSearched: boolean;
@@ -101,7 +101,7 @@ export function ReceptionistServiceOrdersTable({
         <CardContent>
           <EmptyState
             title="Start typing to search"
-            description="Use at least 2 characters to find service orders by ID, vehicle, or description."
+            description="Use one of the search modes above to find service orders."
             icon={<Search className="size-6" />}
           />
         </CardContent>
@@ -127,8 +127,10 @@ export function ReceptionistServiceOrdersTable({
             <TableRow>
               <TableHead>Order</TableHead>
               <TableHead>Vehicle</TableHead>
+              <TableHead>Customer</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Entry date</TableHead>
+              <TableHead>Estimated delivery</TableHead>
               <TableHead>Description</TableHead>
               <TableHead className="w-64 text-right">Actions</TableHead>
             </TableRow>
@@ -141,13 +143,41 @@ export function ReceptionistServiceOrdersTable({
                   <TableCell className="font-medium text-text-primary">
                     #{order.serviceOrderId}
                   </TableCell>
-                  <TableCell>Vehicle #{order.vehicleId}</TableCell>
+                  <TableCell>
+                    <div className="grid gap-0.5">
+                      <span className="text-text-primary">
+                        {order.vehiclePlate || `Vehicle #${order.vehicleId}`}
+                      </span>
+                      {order.vehiclePlate ? (
+                        <span className="text-xs text-text-secondary">
+                          Vehicle #{order.vehicleId}
+                        </span>
+                      ) : null}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {order.customerName || order.customerDocumentNumber ? (
+                      <div className="grid gap-0.5">
+                        <span className="text-text-primary">{order.customerName || '—'}</span>
+                        <span className="text-xs text-text-secondary">
+                          {order.customerDocumentNumber || 'No document'}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-text-secondary">—</span>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <Badge variant={statusBadgeVariant(order.orderStatusId)} dot>
                       {statusLabel}
                     </Badge>
                   </TableCell>
                   <TableCell>{formatDateTime(order.entryDate)}</TableCell>
+                  <TableCell>
+                    {order.estimatedDeliveryDate
+                      ? formatDateTime(order.estimatedDeliveryDate)
+                      : '—'}
+                  </TableCell>
                   <TableCell>
                     <span className="line-clamp-2 max-w-[220px] text-sm text-text-secondary">
                       {order.generalDescription || '—'}

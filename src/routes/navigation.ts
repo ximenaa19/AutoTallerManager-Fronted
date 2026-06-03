@@ -188,14 +188,6 @@ const RECEPTIONIST_NAV: NavItem[] = [
     kind: 'module',
   },
   {
-    id: 'receptionist-assign-mechanic',
-    label: 'Assign Mechanic',
-    path: ROUTES.RECEPTIONIST_ASSIGN_MECHANIC,
-    icon: Wrench,
-    kind: 'deferred',
-    description: 'Assign mechanic is deferred for this phase of the project.',
-  },
-  {
     id: 'receptionist-inventory',
     label: 'Inventory',
     path: ROUTES.RECEPTIONIST_INVENTORY,
@@ -228,7 +220,19 @@ const RECEPTIONIST_NAV: NavItem[] = [
     label: 'Global Search',
     path: ROUTES.RECEPTIONIST_SEARCH,
     icon: Search,
-    kind: 'module',
+    kind: 'deferred',
+    description: 'Global search is deferred pending backend and UX confirmation.',
+  },
+];
+
+const RECEPTIONIST_HIDDEN_DEFERRED_NAV: NavItem[] = [
+  {
+    id: 'receptionist-assign-mechanic',
+    label: 'Assign Mechanic',
+    path: ROUTES.RECEPTIONIST_ASSIGN_MECHANIC,
+    icon: Wrench,
+    kind: 'deferred',
+    description: 'Assign mechanic is deferred for Receptionist and is not available in navigation.',
   },
 ];
 
@@ -344,6 +348,13 @@ const NAV_BY_ROLE: Record<AppRole, NavItem[]> = {
   Client: CLIENT_NAV,
 };
 
+const NAV_LOOKUP_BY_ROLE: Record<AppRole, NavItem[]> = {
+  Admin: ADMIN_NAV,
+  Receptionist: [...RECEPTIONIST_NAV, ...RECEPTIONIST_HIDDEN_DEFERRED_NAV],
+  Mechanic: MECHANIC_NAV,
+  Client: CLIENT_NAV,
+};
+
 export function getNavigationForRole(role: AppRole | null): NavItem[] {
   if (!role) {
     return [];
@@ -355,7 +366,7 @@ export function findNavItemByPath(
   pathname: string,
   role: AppRole | null,
 ): NavItem | undefined {
-  const items = getNavigationForRole(role);
+  const items = getNavigationLookupForRole(role);
   return items.find((item) => isNavPathActive(item.path, pathname));
 }
 
@@ -404,13 +415,20 @@ export function getComingSoonNavItem(
   pathname: string,
   role: AppRole | null,
 ): NavItem | undefined {
-  const items = getNavigationForRole(role);
+  const items = getNavigationLookupForRole(role);
   return items.find((item) => {
     if (item.kind === 'dashboard') {
       return false;
     }
     return isNavPathActive(item.path, pathname);
   });
+}
+
+function getNavigationLookupForRole(role: AppRole | null): NavItem[] {
+  if (!role) {
+    return [];
+  }
+  return NAV_LOOKUP_BY_ROLE[role];
 }
 
 export interface QuickNavItem {

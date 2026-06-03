@@ -20,13 +20,11 @@ export interface InvoicePaymentSummaryPaymentDto {
 
 export interface InvoicePaymentSummaryDto {
   invoiceId: number;
-  invoiceNumber?: string;
-  invoiceStatusId?: number;
+  invoiceNumber: string;
   invoiceTotal: number;
-  completedPaidAmount?: number;
-  paidAmount?: number;
-  refundedAmount?: number;
-  pendingAmount?: number;
+  completedPaidAmount: number;
+  refundedAmount: number;
+  pendingAmount: number;
   payments: InvoicePaymentSummaryPaymentDto[];
 }
 
