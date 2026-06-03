@@ -5,19 +5,6 @@ export interface MechanicSearchResultDto {
   specialtyIds: number[];
 }
 
-export interface MechanicAssignmentDto {
-  mechanicAssignmentId: number;
-  orderServiceId: number;
-  mechanicPersonId: number;
-  specialtyId: number;
-}
-
-export interface MechanicSpecialtyAssignmentDto {
-  assignmentId: number;
-  personId: number;
-  specialtyId: number;
-}
-
 export type MechanicAccountStatus = 'active' | 'inactive' | 'none';
 
 export interface MechanicRosterItem {
@@ -29,16 +16,9 @@ export interface MechanicRosterItem {
   roleAssignmentActive: boolean;
   accountStatus: MechanicAccountStatus;
   userId: number | null;
-  assignmentCount: number;
-  assignments: MechanicAssignmentDto[];
-}
-
-export interface MechanicWorkloadRow {
-  mechanicAssignmentId: number;
-  orderServiceId: number;
-  serviceOrderId: number | null;
-  specialtyId: number;
-  specialtyName: string;
+  email: string | null;
+  assignedServicesCount: number;
+  activeOrdersCount: number;
 }
 
 export function mechanicRosterMatchesSearch(item: MechanicRosterItem, term: string): boolean {
@@ -48,11 +28,13 @@ export function mechanicRosterMatchesSearch(item: MechanicRosterItem, term: stri
   return [
     item.fullName,
     item.documentNumber,
+    item.email,
     String(item.personId),
     item.specialtyNames.join(' '),
     item.accountStatus,
     item.roleAssignmentActive ? 'active role' : 'inactive role',
-    String(item.assignmentCount),
+    String(item.assignedServicesCount),
+    String(item.activeOrdersCount),
   ]
     .join(' ')
     .toLowerCase()

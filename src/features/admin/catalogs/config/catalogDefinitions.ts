@@ -554,7 +554,7 @@ export const CATALOG_DEFINITIONS: CatalogDefinition[] = [
     group: 'system',
     apiPath: '/api/audit-action-types',
     idField: 'auditActionTypeId',
-    operations: { create: true, update: true, delete: true },
+    operations: { create: false, update: false, delete: false },
     fields: [
       {
         key: 'auditActionTypeId',

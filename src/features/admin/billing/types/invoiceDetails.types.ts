@@ -10,3 +10,23 @@ export interface InvoiceDetailDto {
   subtotal: number;
   lineType: string;
 }
+
+export interface InvoiceDetailLineDto {
+  invoiceDetailId: number;
+  sourcePartId?: number | null;
+  concept: string;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+  lineType: string;
+}
+
+export interface InvoiceDetailsByInvoiceDto {
+  invoiceId: number;
+  invoiceNumber: string;
+  invoiceStatusId: number;
+  subtotal: number;
+  tax: number;
+  total: number;
+  details: InvoiceDetailLineDto[];
+}

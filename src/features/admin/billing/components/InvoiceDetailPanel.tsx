@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Card } from '@/components/ui/Card';
 import { InvoiceStatusBadge } from '@/features/admin/billing/components/InvoiceStatusBadge';
 import type { BillingLookups } from '@/features/admin/billing/hooks/useBillingLookups';
-import type { InvoiceDetailDto } from '@/features/admin/billing/types/invoiceDetails.types';
+import type { InvoiceDetailLineDto } from '@/features/admin/billing/types/invoiceDetails.types';
 import type { InvoiceDto } from '@/features/admin/billing/types/invoices.types';
 import { adminServiceOrderDetailPath } from '@/routes/routePaths';
 import { formatCurrency, formatDateTime } from '@/utils/format';
@@ -10,7 +10,7 @@ import { Link } from 'react-router-dom';
 
 export interface InvoiceDetailPanelProps {
   invoice: InvoiceDto;
-  details: InvoiceDetailDto[];
+  details: InvoiceDetailLineDto[];
   lookups: BillingLookups;
   detailsLoading?: boolean;
   detailsError?: string | null;

@@ -1,18 +1,25 @@
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import type { AdminMechanicDetailDto } from '@/features/admin/mechanics/types/adminMechanics.types';
 import type { MechanicRosterItem } from '@/features/admin/mechanics/types/mechanics.types';
 import { ROUTES } from '@/routes/routePaths';
+import { formatDateTime } from '@/utils/format';
 
 export interface MechanicDetailPanelProps {
   mechanic: MechanicRosterItem;
+  detail?: AdminMechanicDetailDto | null;
   onEditSpecialties: () => void;
 }
 
 export function MechanicDetailPanel({
   mechanic,
+  detail,
   onEditSpecialties,
 }: MechanicDetailPanelProps) {
+  const email = detail?.email ?? detail?.user?.email ?? mechanic.email;
+  const phone = detail?.phoneNumber;
+
   return (
     <div className="space-y-6">
       <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -26,8 +33,38 @@ export function MechanicDetailPanel({
           <dt className="text-xs font-medium uppercase tracking-wide text-text-secondary">
             Document
           </dt>
-          <dd className="mt-1 text-sm text-text-primary">{mechanic.documentNumber}</dd>
+          <dd className="mt-1 text-sm text-text-primary">
+            {detail?.documentTypeName
+              ? `${detail.documentTypeName} · ${mechanic.documentNumber}`
+              : mechanic.documentNumber}
+          </dd>
         </div>
+        {email && (
+          <div>
+            <dt className="text-xs font-medium uppercase tracking-wide text-text-secondary">
+              Email
+            </dt>
+            <dd className="mt-1 text-sm text-text-primary">{email}</dd>
+          </div>
+        )}
+        {phone && (
+          <div>
+            <dt className="text-xs font-medium uppercase tracking-wide text-text-secondary">
+              Phone
+            </dt>
+            <dd className="mt-1 text-sm text-text-primary">{phone}</dd>
+          </div>
+        )}
+        {detail?.createdAt && (
+          <div>
+            <dt className="text-xs font-medium uppercase tracking-wide text-text-secondary">
+              Registered
+            </dt>
+            <dd className="mt-1 text-sm text-text-primary">
+              {formatDateTime(detail.createdAt)}
+            </dd>
+          </div>
+        )}
         <div>
           <dt className="text-xs font-medium uppercase tracking-wide text-text-secondary">
             Role assignment
@@ -71,9 +108,15 @@ export function MechanicDetailPanel({
         </div>
         <div>
           <dt className="text-xs font-medium uppercase tracking-wide text-text-secondary">
-            Service assignments
+            Assigned services
           </dt>
-          <dd className="mt-1 text-sm text-text-primary">{mechanic.assignmentCount}</dd>
+          <dd className="mt-1 text-sm text-text-primary">{mechanic.assignedServicesCount}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-medium uppercase tracking-wide text-text-secondary">
+            Active orders
+          </dt>
+          <dd className="mt-1 text-sm text-text-primary">{mechanic.activeOrdersCount}</dd>
         </div>
       </dl>
 
@@ -92,8 +135,8 @@ export function MechanicDetailPanel({
       </div>
 
       <p className="text-xs text-text-secondary">
-        Staff registration and user activation are handled on the Staff and Users pages.
-        This view focuses on mechanic supervision, specialties, and current assignments.
+        Detail and workload load from GET /api/admin/mechanics/{'{personId}'} and workload
+        endpoints. Specialty edits use PUT /api/mechanics/{'{personId}'}/specialties.
       </p>
     </div>
   );

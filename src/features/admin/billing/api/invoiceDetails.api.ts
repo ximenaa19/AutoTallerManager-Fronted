@@ -1,5 +1,8 @@
 import { httpClient } from '@/api/httpClient';
-import type { InvoiceDetailDto } from '@/features/admin/billing/types/invoiceDetails.types';
+import type {
+  InvoiceDetailDto,
+  InvoiceDetailsByInvoiceDto,
+} from '@/features/admin/billing/types/invoiceDetails.types';
 
 export const invoiceDetailsApi = {
   getAll() {
@@ -8,5 +11,11 @@ export const invoiceDetailsApi = {
 
   getById(id: number) {
     return httpClient.get<InvoiceDetailDto>(`/api/invoice-details/${id}`);
+  },
+
+  getByInvoiceId(invoiceId: number) {
+    return httpClient.get<InvoiceDetailsByInvoiceDto>(
+      `/api/invoices/${invoiceId}/details`,
+    );
   },
 };
