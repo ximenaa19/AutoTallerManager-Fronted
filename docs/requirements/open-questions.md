@@ -665,7 +665,7 @@
 
 **Resolution:** Documented in `api-contract.md` §10 (GeneratedInvoiceDto block extended with InvoiceDto, PaymentDto, InvoiceDetailDto, business result types).
 
-**Frontend handling:** Admin Invoicing list uses `GET /api/invoices`; detail page filters `GET /api/invoice-details` client-side by `invoiceId`. Payment summary via `GET /api/invoices/{id}/payment-summary`.
+**Frontend handling:** Admin Invoicing list uses `GET /api/invoices`; detail page uses `GET /api/invoices/{invoiceId}/details` for line items. Payment summary via `GET /api/invoices/{id}/payment-summary`.
 
 ---
 
@@ -683,13 +683,13 @@
 
 ## Invoice details list filtering
 
-**Status:** Resolved — client-side filter (2026-06-01)
+**Status:** Resolved — server endpoint (2026-06-03)
 
 **Related page/feature:** Admin → Invoice detail → line items
 
-**Problem:** `GET /api/invoice-details` returns all details; no `invoiceId` query filter on controller.
+**Confirmed in:** `GET /api/invoices/{invoiceId}/details` returns `InvoiceDetailsByInvoiceDto` with grouped `details[]`.
 
-**Frontend handling:** Fetch full list and filter by `invoiceId` on the client. Documented here; acceptable per no server pagination policy.
+**Frontend handling:** Admin invoice detail uses `GET /api/invoices/{invoiceId}/details`. Do not fetch all `/api/invoice-details` and filter in memory.
 
 ---
 
@@ -787,13 +787,13 @@
 
 ## Admin Audit — CRUD writes
 
-**Status:** Deferred for audit UI (2026-06-01)
+**Status:** Resolved — API read-only (2026-06-03)
 
-**Related page/feature:** Admin → Audit
+**Related page/feature:** Admin → Audit, Admin → Catalogs → Audit Action Types
 
-**Problem:** `POST`/`PUT`/`DELETE` on `/api/audits` exist but manual audit creation is not an operational requirement for this phase.
+**Confirmed in:** `AuditsController` and `AuditActionTypesController` expose GET only. `POST`/`PUT`/`DELETE` removed from API.
 
-**Frontend handling:** Read-only audit page; no create/edit/delete actions.
+**Frontend handling:** Read-only audit page; no create/edit/delete actions. Audit Action Types catalog is list-only (no CRUD in Admin catalogs UI).
 
 ---
 
@@ -801,25 +801,25 @@
 
 ## No dedicated list-all-mechanics endpoint
 
-**Status:** Resolved — frontend composition (2026-06-01)
+**Status:** Resolved — aggregate admin endpoints (2026-06-03)
 
 **Related page/feature:** Admin → Mechanics (`/admin/mechanics`)
 
-**Problem:** Backend exposes `GET /api/search/mechanics?term=` (min. 2 chars) but no paginated or full roster endpoint.
+**Confirmed in:** `GET /api/admin/mechanics`, `GET /api/admin/mechanics/{personId}`, `GET /api/admin/mechanics/{personId}/workload` (Admin only).
 
-**Frontend handling:** Roster built client-side from confirmed sources: `GET /api/person-roles` (Mechanic role), `GET /api/persons`, `GET /api/users` (account active flag), `GET /api/mechanic-specialty-assignments`, `GET /api/mechanic-assignments`, and `GET /api/mechanic-specialties` (catalog labels). Quick search uses `GET /api/search/mechanics?term=`. Staff registration remains on `/admin/staff`.
+**Frontend handling:** Roster, detail, and workload use aggregate admin endpoints. Quick search still uses `GET /api/search/mechanics?term=`. Specialty edits use `PUT /api/mechanics/{personId}/specialties`. Staff registration remains on `/admin/staff`.
 
 ---
 
 ## MechanicAssignmentDto / workload detail fields
 
-**Status:** Resolved from backend (2026-06-01)
+**Status:** Resolved — aggregate workload DTO (2026-06-03)
 
 **Related page/feature:** Admin → Mechanics → workload panel
 
-**Confirmed in:** `MechanicAssignmentDto.cs`, `OrderServiceDto.cs`
+**Confirmed in:** `AdminMechanicWorkloadServiceDto` includes `vehiclePlate`, `serviceTypeName`, `orderStatusName`, `customerName`, `workReported`, etc.
 
-**Fields:** Assignments expose `mechanicAssignmentId`, `orderServiceId`, `mechanicPersonId`, `specialtyId`. Service order context resolved via `GET /api/order-services` → `serviceOrderId`. No order status or customer name on assignment rows; link to service order detail for full context.
+**Frontend handling:** Workload panel loads `GET /api/admin/mechanics/{personId}/workload` and shows enriched rows with links to service orders.
 
 ---
 
@@ -833,4 +833,16 @@
 
 ---
 
-*Last reviewed against backend: 2026-06-01 (Phase 4.8). Update this file when backend or deployment config changes.*
+## Admin purchase cancellation
+
+**Status:** Resolved (2026-06-03)
+
+**Related page/feature:** Admin → Purchases (`/admin/purchases`)
+
+**Confirmed in:** `POST /api/inventory/purchases/{purchaseId}/cancel` (Admin only). Body `{ reason }`. Entity fields `isCancelled`, `cancelledAt`, `cancellationReason`, `cancelledByUserId`. Cancelled purchases return 409 on PUT/DELETE mutations.
+
+**Frontend handling:** Admin-only cancel action with required reason. Edit/delete hidden for cancelled purchases. Cancellation metadata shown in detail modal when present (including from cancel response). Receptionist purchases UI must not expose cancel.
+
+---
+
+*Last reviewed against backend: 2026-06-03 (Admin main sync). Update this file when backend or deployment config changes.*
