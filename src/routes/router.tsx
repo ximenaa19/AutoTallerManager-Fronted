@@ -10,6 +10,15 @@ import { AdminDashboardPage } from '@/pages/dashboards/AdminDashboardPage';
 import { ClientDashboardPage } from '@/pages/dashboards/ClientDashboardPage';
 import { MechanicDashboardPage } from '@/pages/dashboards/MechanicDashboardPage';
 import { ReceptionistDashboardPage } from '@/features/receptionist/pages/ReceptionistDashboardPage';
+import { ReceptionistClientsPage } from '@/features/receptionist/pages/ReceptionistClientsPage';
+import { ReceptionistCreateClientPage } from '@/features/receptionist/pages/ReceptionistCreateClientPage';
+import { ReceptionistVehiclesPage } from '@/features/receptionist/pages/ReceptionistVehiclesPage';
+import { ReceptionistServiceOrdersPage } from '@/features/receptionist/pages/ReceptionistServiceOrdersPage';
+import { ReceptionistCreateServiceOrderPage } from '@/features/receptionist/pages/ReceptionistCreateServiceOrderPage';
+import { ReceptionistInventoryPage } from '@/features/receptionist/pages/ReceptionistInventoryPage';
+import { ReceptionistPurchasesPage } from '@/features/receptionist/pages/ReceptionistPurchasesPage';
+import { ReceptionistInvoicesPage } from '@/features/receptionist/pages/ReceptionistInvoicesPage';
+import { ReceptionistPaymentsPage } from '@/features/receptionist/pages/ReceptionistPaymentsPage';
 import { ComingSoonPage } from '@/pages/placeholders/ComingSoonPage';
 import { UsersPage } from '@/features/admin/pages/UsersPage';
 import { StaffPage } from '@/features/admin/pages/StaffPage';
@@ -97,16 +106,19 @@ export const router = createBrowserRouter([
                 path: ROUTES.RECEPTIONIST_DASHBOARD,
                 element: <ReceptionistDashboardPage />,
               },
-              { path: ROUTES.RECEPTIONIST_CLIENTS, element: comingSoon },
-              { path: ROUTES.RECEPTIONIST_CLIENTS_NEW, element: comingSoon },
-              { path: ROUTES.RECEPTIONIST_VEHICLES, element: comingSoon },
-              { path: ROUTES.RECEPTIONIST_SERVICE_ORDERS_NEW, element: comingSoon },
-              { path: ROUTES.RECEPTIONIST_SERVICE_ORDERS, element: comingSoon },
+              { path: ROUTES.RECEPTIONIST_CLIENTS, element: <ReceptionistClientsPage /> },
+              {
+                path: ROUTES.RECEPTIONIST_CLIENTS_NEW,
+                element: <ReceptionistCreateClientPage />,
+              },
+              { path: ROUTES.RECEPTIONIST_VEHICLES, element: <ReceptionistVehiclesPage /> },
+              { path: ROUTES.RECEPTIONIST_SERVICE_ORDERS_NEW, element: <ReceptionistCreateServiceOrderPage /> },
+              { path: ROUTES.RECEPTIONIST_SERVICE_ORDERS, element: <ReceptionistServiceOrdersPage /> },
               { path: ROUTES.RECEPTIONIST_ASSIGN_MECHANIC, element: comingSoon },
-              { path: ROUTES.RECEPTIONIST_INVENTORY, element: comingSoon },
-              { path: ROUTES.RECEPTIONIST_PURCHASES, element: comingSoon },
-              { path: ROUTES.RECEPTIONIST_INVOICES, element: comingSoon },
-              { path: ROUTES.RECEPTIONIST_PAYMENTS, element: comingSoon },
+              { path: ROUTES.RECEPTIONIST_INVENTORY, element: <ReceptionistInventoryPage /> },
+              { path: ROUTES.RECEPTIONIST_PURCHASES, element: <ReceptionistPurchasesPage /> },
+              { path: ROUTES.RECEPTIONIST_INVOICES, element: <ReceptionistInvoicesPage /> },
+              { path: ROUTES.RECEPTIONIST_PAYMENTS, element: <ReceptionistPaymentsPage /> },
               { path: ROUTES.RECEPTIONIST_SEARCH, element: comingSoon },
             ],
           },

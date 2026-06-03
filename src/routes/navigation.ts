@@ -192,7 +192,8 @@ const RECEPTIONIST_NAV: NavItem[] = [
     label: 'Assign Mechanic',
     path: ROUTES.RECEPTIONIST_ASSIGN_MECHANIC,
     icon: Wrench,
-    kind: 'module',
+    kind: 'deferred',
+    description: 'Assign mechanic is deferred for this phase of the project.',
   },
   {
     id: 'receptionist-inventory',
