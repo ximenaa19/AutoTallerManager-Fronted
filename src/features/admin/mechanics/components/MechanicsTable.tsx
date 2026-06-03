@@ -113,10 +113,17 @@ export function MechanicsTable({
       cell: (mechanic) => renderAccountBadge(mechanic.accountStatus),
     },
     {
-      id: 'assignments',
-      header: 'Assignments',
+      id: 'services',
+      header: 'Services',
       cell: (mechanic) => (
-        <span className="text-sm text-text-primary">{mechanic.assignmentCount}</span>
+        <span className="text-sm text-text-primary">{mechanic.assignedServicesCount}</span>
+      ),
+    },
+    {
+      id: 'orders',
+      header: 'Active orders',
+      cell: (mechanic) => (
+        <span className="text-sm text-text-primary">{mechanic.activeOrdersCount}</span>
       ),
     },
     {

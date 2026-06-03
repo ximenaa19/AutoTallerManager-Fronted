@@ -51,7 +51,12 @@ export function InvoiceDetailPage() {
     return invoicesApi.getById(invoiceId);
   }, [invoiceId]);
 
-  const loadDetails = useCallback(() => invoiceDetailsApi.getAll(), []);
+  const loadDetails = useCallback(() => {
+    if (!invoiceId || Number.isNaN(invoiceId)) {
+      throw new Error('Invalid invoice ID');
+    }
+    return invoiceDetailsApi.getByInvoiceId(invoiceId);
+  }, [invoiceId]);
   const loadSummary = useCallback(() => {
     if (!invoiceId || Number.isNaN(invoiceId)) {
       throw new Error('Invalid invoice ID');
@@ -60,15 +65,12 @@ export function InvoiceDetailPage() {
   }, [invoiceId]);
 
   const invoiceRequest = useAsyncRequest(loadInvoice, [invoiceId, refreshKey]);
-  const detailsRequest = useAsyncRequest(loadDetails, [refreshKey]);
+  const detailsRequest = useAsyncRequest(loadDetails, [invoiceId, refreshKey]);
   const summaryRequest = useAsyncRequest(loadSummary, [invoiceId, refreshKey]);
 
   const invoiceDetails = useMemo(() => {
-    if (!invoiceRequest.data) return [];
-    return (detailsRequest.data ?? []).filter(
-      (detail) => detail.invoiceId === invoiceRequest.data!.invoiceId,
-    );
-  }, [detailsRequest.data, invoiceRequest.data]);
+    return detailsRequest.data?.details ?? [];
+  }, [detailsRequest.data]);
 
   const refreshAll = () => setRefreshKey((value) => value + 1);
 

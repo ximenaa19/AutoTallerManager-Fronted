@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import {
+  Ban,
   Eye,
   Pencil,
   Plus,
@@ -8,6 +9,7 @@ import {
   Truck,
 } from 'lucide-react';
 import { getErrorMessage } from '@/api/apiError';
+import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { AdminDataTable } from '@/features/admin/components/AdminDataTable';
@@ -18,8 +20,10 @@ import {
   filterBySearchTerm,
   useClientPagination,
 } from '@/features/admin/hooks/useClientPagination';
+import { inventoryApi } from '@/features/admin/inventory/api/inventory.api';
 import { purchasesApi } from '@/features/admin/inventory/api/purchases.api';
 import { suppliersApi } from '@/features/admin/inventory/api/suppliers.api';
+import { CancelPurchaseModal } from '@/features/admin/inventory/components/CancelPurchaseModal';
 import { PurchaseDetailsPanel } from '@/features/admin/inventory/components/PurchaseDetailsPanel';
 import { PurchaseForm } from '@/features/admin/inventory/components/PurchaseForm';
 import { RegisterPurchaseModal } from '@/features/admin/inventory/components/RegisterPurchaseModal';
@@ -44,18 +48,25 @@ import { cn } from '@/lib/cn';
 type PurchasesTab = 'purchases' | 'suppliers';
 type SupplierModalMode = 'create' | 'edit' | null;
 
+function isPurchaseCancelled(purchase: PartPurchaseDto): boolean {
+  return purchase.isCancelled === true;
+}
+
 function purchaseMatchesSearch(
   purchase: PartPurchaseDto,
   term: string,
   supplierLabel: string,
 ): boolean {
   const dateLabel = formatDateTime(purchase.purchaseDate).toLowerCase();
+  const statusLabel = isPurchaseCancelled(purchase) ? 'cancelled' : 'active';
   const haystack = [
     String(purchase.partPurchaseId),
     `#${purchase.partPurchaseId}`,
     supplierLabel,
     dateLabel,
     String(purchase.total),
+    statusLabel,
+    purchase.cancellationReason,
   ]
     .join(' ')
     .toLowerCase();
@@ -91,6 +102,7 @@ export function PurchasesPage() {
   const [editPurchase, setEditPurchase] = useState<PartPurchaseDto | null>(null);
   const [pendingDeletePurchase, setPendingDeletePurchase] =
     useState<PartPurchaseDto | null>(null);
+  const [cancelPurchase, setCancelPurchase] = useState<PartPurchaseDto | null>(null);
   const [supplierModalMode, setSupplierModalMode] =
     useState<SupplierModalMode>(null);
   const [selectedSupplier, setSelectedSupplier] = useState<SupplierDto | null>(
@@ -154,6 +166,38 @@ export function PurchasesPage() {
   const viewPurchaseDetails = viewPurchase
     ? detailsByPurchaseId.get(viewPurchase.partPurchaseId) ?? []
     : [];
+
+  const handleCancelPurchase = async (reason: string) => {
+    if (!cancelPurchase) return;
+
+    setActionLoading(true);
+    setActionError(null);
+
+    try {
+      const response = await inventoryApi.cancelPurchase(cancelPurchase.partPurchaseId, {
+        reason,
+      });
+      setSuccessMessage(
+        response.data.message ||
+          `Purchase #${cancelPurchase.partPurchaseId} cancelled.`,
+      );
+      setCancelPurchase(null);
+      if (viewPurchase?.partPurchaseId === cancelPurchase.partPurchaseId) {
+        setViewPurchase({
+          ...viewPurchase,
+          isCancelled: true,
+          cancelledAt: response.data.cancelledAt,
+          cancellationReason: response.data.cancellationReason,
+          cancelledByUserId: response.data.cancelledByUserId,
+        });
+      }
+      refreshAll();
+    } catch (err) {
+      setActionError(getErrorMessage(err));
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   const handleDeletePurchase = async () => {
     if (!pendingDeletePurchase) return;
@@ -346,6 +390,20 @@ export function PurchasesPage() {
                 cell: (row) => formatCurrency(row.total),
               },
               {
+                id: 'status',
+                header: 'Status',
+                cell: (row) =>
+                  isPurchaseCancelled(row) ? (
+                    <Badge variant="cancelled" dot>
+                      Cancelled
+                    </Badge>
+                  ) : (
+                    <Badge variant="active" dot>
+                      Active
+                    </Badge>
+                  ),
+              },
+              {
                 id: 'lines',
                 header: 'Lines',
                 className: 'w-20',
@@ -356,34 +414,49 @@ export function PurchasesPage() {
                 id: 'actions',
                 header: '',
                 className: 'w-40 text-right',
-                cell: (row) => (
-                  <div className="flex justify-end gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setViewPurchase(row)}
-                      aria-label={`View purchase ${row.partPurchaseId}`}
-                    >
-                      <Eye className="size-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setEditPurchase(row)}
-                      aria-label={`Edit purchase ${row.partPurchaseId}`}
-                    >
-                      <Pencil className="size-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setPendingDeletePurchase(row)}
-                      aria-label={`Delete purchase ${row.partPurchaseId}`}
-                    >
-                      <Trash2 className="size-4 text-danger" />
-                    </Button>
-                  </div>
-                ),
+                cell: (row) => {
+                  const cancelled = isPurchaseCancelled(row);
+                  return (
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setViewPurchase(row)}
+                        aria-label={`View purchase ${row.partPurchaseId}`}
+                      >
+                        <Eye className="size-4" />
+                      </Button>
+                      {!cancelled && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setCancelPurchase(row)}
+                            aria-label={`Cancel purchase ${row.partPurchaseId}`}
+                          >
+                            <Ban className="size-4 text-danger" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditPurchase(row)}
+                            aria-label={`Edit purchase ${row.partPurchaseId}`}
+                          >
+                            <Pencil className="size-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setPendingDeletePurchase(row)}
+                            aria-label={`Delete purchase ${row.partPurchaseId}`}
+                          >
+                            <Trash2 className="size-4 text-danger" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  );
+                },
               },
             ]}
             data={purchasesPagination.items}
@@ -555,13 +628,38 @@ export function PurchasesPage() {
         size="lg"
       >
         {viewPurchase && (
-          <PurchaseDetailsPanel
-            details={viewPurchaseDetails}
-            lookups={lookups}
-            isLoading={detailsRequest.isLoading}
-            error={detailsRequest.error}
-            onRetry={detailsRequest.retry}
-          />
+          <div className="space-y-4">
+            {isPurchaseCancelled(viewPurchase) && (
+              <div className="rounded-lg border border-danger/30 bg-danger-muted/20 px-4 py-3 text-sm">
+                <p className="font-medium text-danger">This purchase is cancelled</p>
+                {viewPurchase.cancelledAt && (
+                  <p className="mt-1 text-text-secondary">
+                    Cancelled at {formatDateTime(viewPurchase.cancelledAt)}
+                  </p>
+                )}
+                {viewPurchase.cancellationReason && (
+                  <p className="mt-1 text-text-primary">
+                    Reason: {viewPurchase.cancellationReason}
+                  </p>
+                )}
+                {viewPurchase.cancelledByUserId != null && (
+                  <p className="mt-1 text-text-muted">
+                    Cancelled by user #{viewPurchase.cancelledByUserId}
+                  </p>
+                )}
+                <p className="mt-2 text-xs text-text-muted">
+                  Cancelled purchases cannot be edited, deleted, or modified.
+                </p>
+              </div>
+            )}
+            <PurchaseDetailsPanel
+              details={viewPurchaseDetails}
+              lookups={lookups}
+              isLoading={detailsRequest.isLoading}
+              error={detailsRequest.error}
+              onRetry={detailsRequest.retry}
+            />
+          </div>
         )}
       </Modal>
 
@@ -606,6 +704,14 @@ export function PurchasesPage() {
           />
         )}
       </Modal>
+
+      <CancelPurchaseModal
+        open={cancelPurchase !== null}
+        purchaseId={cancelPurchase?.partPurchaseId ?? 0}
+        isLoading={actionLoading}
+        onClose={() => setCancelPurchase(null)}
+        onConfirm={handleCancelPurchase}
+      />
 
       <ConfirmActionModal
         open={pendingDeletePurchase !== null}

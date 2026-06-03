@@ -2,99 +2,162 @@ import { Link } from 'react-router-dom';
 import { ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import type { MechanicRosterItem, MechanicWorkloadRow } from '@/features/admin/mechanics/types/mechanics.types';
-import type { OrderServiceDto } from '@/features/admin/serviceOrders/types/orderServices.types';
+import type {
+  AdminMechanicActiveOrderDto,
+  AdminMechanicWorkloadDto,
+  AdminMechanicWorkloadServiceDto,
+} from '@/features/admin/mechanics/types/adminMechanics.types';
 import { adminServiceOrderDetailPath } from '@/routes/routePaths';
+import { formatDateTime } from '@/utils/format';
 
 export interface MechanicWorkloadPanelProps {
-  mechanic: MechanicRosterItem;
-  orderServiceById: Map<number, OrderServiceDto>;
-  specialtyNameById: Map<number, string>;
+  workload: AdminMechanicWorkloadDto | null;
+  activeOrders?: AdminMechanicActiveOrderDto[];
+  isLoading?: boolean;
+  error?: string | null;
+  onRetry?: () => void;
 }
 
-function buildWorkloadRows(
-  mechanic: MechanicRosterItem,
-  orderServiceById: Map<number, OrderServiceDto>,
-  specialtyNameById: Map<number, string>,
-): MechanicWorkloadRow[] {
-  return mechanic.assignments
-    .map((assignment) => {
-      const orderService = orderServiceById.get(assignment.orderServiceId);
-      return {
-        mechanicAssignmentId: assignment.mechanicAssignmentId,
-        orderServiceId: assignment.orderServiceId,
-        serviceOrderId: orderService?.serviceOrderId ?? null,
-        specialtyId: assignment.specialtyId,
-        specialtyName:
-          specialtyNameById.get(assignment.specialtyId) ??
-          `Specialty #${assignment.specialtyId}`,
-      };
-    })
-    .sort((a, b) => {
-      const orderA = a.serviceOrderId ?? Number.MAX_SAFE_INTEGER;
-      const orderB = b.serviceOrderId ?? Number.MAX_SAFE_INTEGER;
-      if (orderA !== orderB) return orderA - orderB;
-      return a.orderServiceId - b.orderServiceId;
-    });
+function ServiceRow({ service }: { service: AdminMechanicWorkloadServiceDto }) {
+  const plate = service.vehiclePlate?.trim();
+  const title = plate
+    ? plate
+    : service.serviceTypeName?.trim() || `Order service #${service.orderServiceId}`;
+
+  return (
+    <li className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <p className="text-sm font-medium text-text-primary">{title}</p>
+        <p className="text-xs text-text-secondary">
+          Service order #{service.serviceOrderId}
+          {service.serviceTypeName ? ` · ${service.serviceTypeName}` : ''}
+          {service.orderStatusName ? ` · ${service.orderStatusName}` : ''}
+        </p>
+        {service.customerName && (
+          <p className="text-xs text-text-muted">{service.customerName}</p>
+        )}
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        {service.workReported ? (
+          <Badge variant="active">Work reported</Badge>
+        ) : (
+          <Badge variant="pending">Pending work</Badge>
+        )}
+        <Link to={adminServiceOrderDetailPath(service.serviceOrderId)}>
+          <Button variant="ghost" size="sm" leftIcon={<ExternalLink className="size-4" />}>
+            Open order
+          </Button>
+        </Link>
+      </div>
+    </li>
+  );
 }
 
 export function MechanicWorkloadPanel({
-  mechanic,
-  orderServiceById,
-  specialtyNameById,
+  workload,
+  activeOrders = [],
+  isLoading = false,
+  error = null,
+  onRetry,
 }: MechanicWorkloadPanelProps) {
-  const rows = buildWorkloadRows(mechanic, orderServiceById, specialtyNameById);
-
-  if (rows.length === 0) {
+  if (isLoading) {
     return (
       <div className="rounded-lg border border-border bg-bg-elevated/40 p-4">
-        <h3 className="text-sm font-medium text-text-primary">Current assignments</h3>
-        <p className="mt-2 text-sm text-text-secondary">
-          No active mechanic assignments recorded in GET /api/mechanic-assignments for this
-          mechanic.
-        </p>
+        <p className="text-sm text-text-secondary">Loading workload…</p>
       </div>
     );
   }
 
+  if (error) {
+    return (
+      <div className="rounded-lg border border-danger/30 bg-danger-muted/20 p-4">
+        <p className="text-sm text-danger">{error}</p>
+        {onRetry && (
+          <button
+            type="button"
+            className="mt-2 text-sm font-medium text-accent hover:underline"
+            onClick={onRetry}
+          >
+            Retry
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  if (!workload) {
+    return null;
+  }
+
+  const services = workload.services ?? [];
+
   return (
-    <div className="space-y-3">
-      <div>
-        <h3 className="text-sm font-medium text-text-primary">Current assignments</h3>
-        <p className="text-xs text-text-secondary">
-          Read-only overview from GET /api/mechanic-assignments and GET /api/order-services.
-          Assign or unassign mechanics from service order detail.
-        </p>
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        {[
+          { label: 'Assigned', value: workload.assignedServicesCount },
+          { label: 'Active orders', value: workload.activeOrdersCount },
+          { label: 'Pending', value: workload.pendingServicesCount },
+          { label: 'In progress', value: workload.inProgressServicesCount },
+          { label: 'Completed', value: workload.completedServicesCount },
+        ].map((stat) => (
+          <div
+            key={stat.label}
+            className="rounded-lg border border-border bg-bg-elevated/40 px-3 py-2"
+          >
+            <p className="text-xs text-text-secondary">{stat.label}</p>
+            <p className="text-lg font-semibold text-text-primary">{stat.value}</p>
+          </div>
+        ))}
       </div>
 
-      <ul className="divide-y divide-border rounded-lg border border-border bg-bg-elevated/40">
-        {rows.map((row) => (
-          <li
-            key={row.mechanicAssignmentId}
-            className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-          >
-            <div>
-              <p className="text-sm font-medium text-text-primary">
-                Order service #{row.orderServiceId}
-              </p>
-              <p className="text-xs text-text-secondary">
-                Assignment #{row.mechanicAssignmentId}
-                {row.serviceOrderId ? ` · Service order #${row.serviceOrderId}` : ''}
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="accent">{row.specialtyName}</Badge>
-              {row.serviceOrderId && (
-                <Link to={adminServiceOrderDetailPath(row.serviceOrderId)}>
+      <div>
+        <h3 className="text-sm font-medium text-text-primary">Assigned services</h3>
+        <p className="text-xs text-text-secondary">
+          From GET /api/admin/mechanics/{'{personId}'}/workload
+        </p>
+        {services.length === 0 ? (
+          <p className="mt-2 text-sm text-text-secondary">No assigned services.</p>
+        ) : (
+          <ul className="mt-2 divide-y divide-border rounded-lg border border-border bg-bg-elevated/40">
+            {services.map((service) => (
+              <ServiceRow key={service.mechanicAssignmentId} service={service} />
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {activeOrders.length > 0 && (
+        <div>
+          <h3 className="text-sm font-medium text-text-primary">Active orders</h3>
+          <ul className="mt-2 divide-y divide-border rounded-lg border border-border bg-bg-elevated/40">
+            {activeOrders.map((order) => (
+              <li
+                key={order.serviceOrderId}
+                className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div>
+                  <p className="text-sm font-medium text-text-primary">
+                    {order.vehiclePlate?.trim() || `Order #${order.serviceOrderId}`}
+                  </p>
+                  <p className="text-xs text-text-secondary">
+                    {order.orderStatusName} · entered {formatDateTime(order.entryDate)}
+                  </p>
+                  <p className="text-xs text-text-muted">
+                    {order.assignedServicesCount} assigned ·{' '}
+                    {order.pendingWorkReportsCount} pending work reports
+                  </p>
+                </div>
+                <Link to={adminServiceOrderDetailPath(order.serviceOrderId)}>
                   <Button variant="ghost" size="sm" leftIcon={<ExternalLink className="size-4" />}>
                     Open order
                   </Button>
                 </Link>
-              )}
-            </div>
-          </li>
-        ))}
-      </ul>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

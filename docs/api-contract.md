@@ -1,6 +1,6 @@
 # AutoTallerManager API Contract
 
-> **Document review:** 2026-06-02 (vehicle plate pass). Vehicle `plate` field, validation rules, and affected request/response DTOs were re-verified against `AutoTallerManager-Backend` Application layer source (`VehicleService.cs`, `ClientVehicleFlowService.cs`, `SearchService.cs`, `ServiceOrderWorkflowService.cs`).
+> **Document review:** 2026-06-03 (Admin sync). Admin mechanics aggregate endpoints, invoice details by `invoiceId`, purchase cancel/reverse, audit read-only API, and vehicle plate contract re-verified against `AutoTallerManager-Backend` `main` (commit `ade98b70`).
 
 ## 1. Purpose of This Document
 
@@ -383,16 +383,13 @@ Total documented endpoints: **303**
 | Admin Audits | GET | `/api/admin/audits/recent` | Admin | List all | `Api/Controllers/AdminAuditQueriesController.cs` |
 | Admin Audits | GET | `/api/admin/audits/by-entity` | Admin | List all | `Api/Controllers/AdminAuditQueriesController.cs` |
 | Admin Audits | GET | `/api/admin/audits/by-user/{userId}` | Admin | Get by ID | `Api/Controllers/AdminAuditQueriesController.cs` |
-| AuditActionTypes | GET | `/api/audit-action-types` | Admin | List all | `Api/Controllers/AuditActionTypesController.cs` |
-| AuditActionTypes | GET | `/api/audit-action-types/{id}` | Admin | Get by ID | `Api/Controllers/AuditActionTypesController.cs` |
-| AuditActionTypes | POST | `/api/audit-action-types` | Admin | Create | `Api/Controllers/AuditActionTypesController.cs` |
-| AuditActionTypes | PUT | `/api/audit-action-types/{id}` | Admin | Update | `Api/Controllers/AuditActionTypesController.cs` |
-| AuditActionTypes | DELETE | `/api/audit-action-types/{id}` | Admin | Delete | `Api/Controllers/AuditActionTypesController.cs` |
-| Audits | GET | `/api/audits` | Admin | List all | `Api/Controllers/AuditsController.cs` |
-| Audits | GET | `/api/audits/{id}` | Admin | Get by ID | `Api/Controllers/AuditsController.cs` |
-| Audits | POST | `/api/audits` | Admin | Create | `Api/Controllers/AuditsController.cs` |
-| Audits | PUT | `/api/audits/{id}` | Admin | Update | `Api/Controllers/AuditsController.cs` |
-| Audits | DELETE | `/api/audits/{id}` | Admin | Delete | `Api/Controllers/AuditsController.cs` |
+| Admin Mechanics | GET | `/api/admin/mechanics` | Admin | List all mechanics (aggregate) | `Api/Controllers/AdminMechanicsController.cs` |
+| Admin Mechanics | GET | `/api/admin/mechanics/{personId}` | Admin | Mechanic detail (aggregate) | `Api/Controllers/AdminMechanicsController.cs` |
+| Admin Mechanics | GET | `/api/admin/mechanics/{personId}/workload` | Admin | Mechanic workload | `Api/Controllers/AdminMechanicsController.cs` |
+| AuditActionTypes | GET | `/api/audit-action-types` | Admin | List all (read-only) | `Api/Controllers/AuditActionTypesController.cs` |
+| AuditActionTypes | GET | `/api/audit-action-types/{id}` | Admin | Get by ID (read-only) | `Api/Controllers/AuditActionTypesController.cs` |
+| Audits | GET | `/api/audits` | Admin | List all (read-only) | `Api/Controllers/AuditsController.cs` |
+| Audits | GET | `/api/audits/{id}` | Admin | Get by ID (read-only) | `Api/Controllers/AuditsController.cs` |
 | Auth | POST | `/api/auth/register-client` | Public | Business action | `Api/Controllers/AuthController.cs` |
 | Auth | POST | `/api/auth/login` | Public | Business action | `Api/Controllers/AuthController.cs` |
 | Auth | POST | `/api/auth/refresh` | Public | Business action | `Api/Controllers/AuthController.cs` |
@@ -454,6 +451,7 @@ Total documented endpoints: **303**
 | Inventory Business | GET | `/api/inventory/low-stock` | Admin,Receptionist | List all | `Api/Controllers/InventoryBusinessController.cs` |
 | Inventory Business | POST | `/api/inventory/adjust-stock` | Admin | Adjust part stock | `Api/Controllers/InventoryBusinessController.cs` |
 | Inventory Business | GET | `/api/inventory/summary` | Admin,Receptionist | Inventory summary | `Api/Controllers/InventoryBusinessController.cs` |
+| Inventory Business | POST | `/api/inventory/purchases/{purchaseId}/cancel` | Admin | Cancel purchase (revert stock) | `Api/Controllers/InventoryBusinessController.cs` |
 | Invoice Business | POST | `/api/invoices/generate-from-service-order/{serviceOrderId}` | Admin,Receptionist | Action | `Api/Controllers/InvoiceBusinessController.cs` |
 | Invoice Business | POST | `/api/invoices/{id}/recalculate` | Admin,Receptionist | Business action | `Api/Controllers/InvoiceBusinessController.cs` |
 | Invoice Business | POST | `/api/invoices/{id}/issue` | Admin,Receptionist | Business action | `Api/Controllers/InvoiceBusinessController.cs` |
@@ -465,6 +463,7 @@ Total documented endpoints: **303**
 | InvoiceDetails | DELETE | `/api/invoice-details/{id}` | Admin,Receptionist | Delete | `Api/Controllers/InvoiceDetailsController.cs` |
 | Invoices | GET | `/api/invoices` | Admin,Receptionist | List all | `Api/Controllers/InvoicesController.cs` |
 | Invoices | GET | `/api/invoices/{id}` | Admin,Receptionist | Get by ID | `Api/Controllers/InvoicesController.cs` |
+| Invoices | GET | `/api/invoices/{invoiceId}/details` | Admin,Receptionist | Invoice line items by invoice | `Api/Controllers/InvoicesController.cs` |
 | Invoices | POST | `/api/invoices` | Admin,Receptionist | Create | `Api/Controllers/InvoicesController.cs` |
 | Invoices | PUT | `/api/invoices/{id}` | Admin,Receptionist | Update | `Api/Controllers/InvoicesController.cs` |
 | Invoices | DELETE | `/api/invoices/{id}` | Admin,Receptionist | Delete | `Api/Controllers/InvoicesController.cs` |
@@ -1484,8 +1483,11 @@ All search endpoints require query parameter **`term`**.
 | POST | `/api/invoices/{id}/recalculate` | Admin, Receptionist | Recalculate totals |
 | POST | `/api/invoices/{id}/issue` | Admin, Receptionist | Issue draft invoice |
 | POST | `/api/invoices/{id}/cancel` | Admin | Body: `{ reason }` — **reason required** (non-empty) |
+| GET | `/api/invoices/{invoiceId}/details` | Admin, Receptionist | Line items grouped by invoice — prefer over `GET /api/invoice-details` + client filter |
 
-**Source:** `Api/Controllers/InvoiceBusinessController.cs`
+**Source:** `Api/Controllers/InvoiceBusinessController.cs`, `Api/Controllers/InvoicesController.cs`
+
+**Invoice details by invoice (`InvoiceDetailsByInvoiceDto`):** `invoiceId`, `invoiceNumber`, `invoiceStatusId`, `subtotal`, `tax`, `total`, `details[]` where each line has `invoiceDetailId`, `sourcePartId?`, `concept`, `quantity`, `unitPrice`, `subtotal`, `lineType`.
 
 ---
 
@@ -1527,8 +1529,11 @@ All search endpoints require query parameter **`term`**.
 | GET | `/api/inventory/low-stock` | Admin, Receptionist |
 | POST | `/api/inventory/adjust-stock` | Admin |
 | GET | `/api/inventory/summary` | Admin, Receptionist |
+| POST | `/api/inventory/purchases/{purchaseId}/cancel` | Admin |
 
 **Source:** `Api/Controllers/InventoryBusinessController.cs`
+
+**Cancel purchase (Admin only):** Body `{ "reason": "string" }` (required). Marks purchase cancelled, reverts stock, audits as CANCEL. **409** on double cancel or mutating cancelled purchase via CRUD routes. Response: `InventoryPurchaseCancellationResultDto` (`isCancelled`, `cancelledAt`, `cancellationReason`, `cancelledByUserId`, …).
 
 **Register purchase body (`RegisterInventoryPurchaseRequest`):**
 
@@ -1601,7 +1606,7 @@ All search endpoints require query parameter **`term`**.
 | PUT | `/api/part-purchase-details/{id}` | `UpdatePartPurchaseDetailRequest` | `PartPurchaseDetailDto` |
 | DELETE | `/api/part-purchase-details/{id}` | — | 204 |
 
-**Note:** `POST /api/inventory/register-purchase` is the canonical single-transaction flow (header + lines + stock). The Admin **Register purchase** UI uses only this endpoint. CRUD routes below (`POST /api/part-purchases`, `POST /api/part-purchase-details`) remain available for other clients; purchase history in Admin uses GET/PUT/DELETE on those resources, not POST create for registration.
+**Note:** `POST /api/inventory/register-purchase` is the canonical single-transaction flow (header + lines + stock). The Admin **Register purchase** UI uses only this endpoint. Admin cancels via `POST /api/inventory/purchases/{purchaseId}/cancel` (not Receptionist). Cancelled purchases return **409** on PUT/DELETE header or detail mutations. CRUD routes below remain for non-cancelled purchases; purchase history in Admin uses GET/PUT/DELETE on those resources, not POST create for registration.
 
 `PartDto` / `PartSearchResultDto` do **not** include a separate `name` or `partName` field. Use **`description`** as the human-readable catalog label; **`code`** is the part code/SKU.
 
@@ -1726,6 +1731,26 @@ export interface PartPurchaseDto {
   supplierId: number;
   purchaseDate: string;
   total: number;
+  isCancelled?: boolean;
+  cancelledAt?: string | null;
+  cancellationReason?: string | null;
+  cancelledByUserId?: number | null;
+}
+
+export interface CancelInventoryPurchaseRequest {
+  reason: string;
+}
+
+export interface InventoryPurchaseCancellationResultDto {
+  partPurchaseId: number;
+  supplierId: number;
+  purchaseDate: string;
+  total: number;
+  isCancelled: boolean;
+  cancelledAt?: string | null;
+  cancellationReason?: string | null;
+  cancelledByUserId?: number | null;
+  message: string;
 }
 
 export interface CreatePartPurchaseRequest {
@@ -1806,6 +1831,22 @@ All accept optional query params **`from`** and **`to`** (DateTime).
 
 **Source:** `Api/Controllers/AdminAuditQueriesController.cs`  
 **Success (200):** `AuditQueryDto[]`
+
+**Read-only audit API:** `GET /api/audits`, `GET /api/audits/{id}`, `GET /api/audit-action-types`, `GET /api/audit-action-types/{id}` only. `POST`/`PUT`/`DELETE` on audits and audit-action-types were removed — do not expose create/edit/delete in Admin UI.
+
+---
+
+### Admin mechanics (aggregate)
+
+| Method | Route | Response |
+|--------|-------|----------|
+| GET | `/api/admin/mechanics` | `AdminMechanicListItemDto[]` |
+| GET | `/api/admin/mechanics/{personId}` | `AdminMechanicDetailDto` |
+| GET | `/api/admin/mechanics/{personId}/workload` | `AdminMechanicWorkloadDto` |
+
+**Auth:** Admin only. **Source:** `Api/Controllers/AdminMechanicsController.cs`, `Application/Features/AdminMechanics/`.
+
+List/detail include `personId`, `fullName`, `documentNumber`, `userId`, `email`, `isUserActive`, `roleActive`, `specialties[]`, assignment counts, and enriched workload rows (`vehiclePlate`, `serviceTypeName`, `orderStatusName`, `customerName`, …). Specialty edits remain `PUT /api/mechanics/{personId}/specialties`.
 
 ---
 
@@ -2244,7 +2285,7 @@ export type AuditQueryDto = AuditDto;
 | GET | `/api/admin/audits/by-entity` | Query: `entity` (required), `recordId` (required, &gt; 0) |
 | GET | `/api/admin/audits/by-user/{userId}` | Route `userId` must exist |
 
-**CRUD** `/api/audits` — Admin only; list/get for audit UI; create/update/delete exist but are not used in the read-only audit page.
+**Read-only** `/api/audits` and `/api/audit-action-types` — Admin list/get only; no API mutations. Admin Audit UI is read-only.
 
 ### Search results
 
