@@ -39,3 +39,13 @@ export interface ClientInvoiceDetailDto {
   subtotal: number;
   lineType: string;
 }
+
+export interface ClientInvoiceDetailsByInvoiceDto {
+  invoiceId: number;
+  invoiceNumber: string;
+  invoiceStatusId: number;
+  subtotal: number;
+  tax: number;
+  total: number;
+  details: Array<Omit<ClientInvoiceDetailDto, 'invoiceId'>>;
+}

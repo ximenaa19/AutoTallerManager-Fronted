@@ -1,7 +1,7 @@
 import { httpClient } from '@/api/httpClient';
 import type {
   GeneratedInvoiceDto,
-  InvoiceDetailDto,
+  InvoiceDetailsByInvoiceDto,
   InvoiceDto,
   InvoicePaymentSummaryDto,
   InvoiceSearchResultDto,
@@ -24,8 +24,18 @@ export const receptionistInvoicesApi = {
     return httpClient.get<InvoiceDto>(`/api/invoices/${invoiceId}`);
   },
 
-  getInvoiceDetails(invoiceId: number) {
-    return httpClient.get<InvoiceDetailDto[]>(`/api/invoices/${invoiceId}/details`);
+  async getInvoiceDetails(invoiceId: number) {
+    const response = await httpClient.get<InvoiceDetailsByInvoiceDto>(
+      `/api/invoices/${invoiceId}/details`,
+    );
+
+    return {
+      ...response,
+      data: response.data.details.map((detail) => ({
+        ...detail,
+        invoiceId: response.data.invoiceId,
+      })),
+    };
   },
 
   generateFromServiceOrder(

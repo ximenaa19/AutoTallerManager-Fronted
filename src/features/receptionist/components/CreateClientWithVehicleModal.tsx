@@ -14,6 +14,10 @@ import type {
 } from '@/features/receptionist/types/receptionistClients.types';
 import { isValidEmail, validateMaxLength, validatePhoneNumber } from '@/utils/validation';
 
+const VIN_LENGTH = 17;
+const VIN_PATTERN = /^[A-Z0-9]{17}$/;
+const PLATE_REGEX = /^[A-Z0-9]+(?:-[A-Z0-9]+)*$/;
+
 interface FormState {
   documentTypeId: string;
   documentNumber: string;
@@ -56,8 +60,6 @@ const initialForm: FormState = {
   mileage: '0',
 };
 
-const plateRegex = /^[A-Z0-9]+(?:-[A-Z0-9]+)*$/;
-
 function normalizePlate(plate: string): string {
   return plate.trim().toUpperCase();
 }
@@ -81,7 +83,7 @@ function buildPayload(form: FormState): CreateClientWithVehicleRequest {
     modelId: Number(form.modelId),
     vehicleTypeId: Number(form.vehicleTypeId),
     plate: normalizedPlate,
-    vin: form.vin.trim() || undefined,
+    vin: form.vin.trim().toUpperCase(),
     year: Number(form.year),
     color: form.color.trim() || undefined,
     mileage: Number(form.mileage),
@@ -206,6 +208,9 @@ export function CreateClientWithVehicleModal({
     const errors: FormFieldErrors = {};
 
     if (!form.documentTypeId) errors.documentTypeId = 'Document type is required';
+    if (!form.documentNumber.trim()) errors.documentNumber = 'Document number is required';
+    if (!form.firstName.trim()) errors.firstName = 'First name is required';
+    if (!form.lastName.trim()) errors.lastName = 'Last name is required';
     if (!form.modelId) errors.modelId = 'Vehicle model is required';
     if (!form.vehicleTypeId) errors.vehicleTypeId = 'Vehicle type is required';
 
@@ -214,13 +219,21 @@ export function CreateClientWithVehicleModal({
       errors.plate = 'Vehicle plate is required.';
     } else if (normalizedPlate.length < 5 || normalizedPlate.length > 10) {
       errors.plate = 'Vehicle plate must be between 5 and 10 characters.';
-    } else if (!plateRegex.test(normalizedPlate)) {
+    } else if (!PLATE_REGEX.test(normalizedPlate)) {
       errors.plate = 'Vehicle plate can only contain letters, numbers, and optional hyphens.';
     }
 
+    const normalizedVin = form.vin.trim().toUpperCase();
+    if (!normalizedVin) {
+      errors.vin = 'VIN is required.';
+    } else if (!VIN_PATTERN.test(normalizedVin)) {
+      errors.vin = `VIN must be exactly ${VIN_LENGTH} alphanumeric characters.`;
+    }
+
     const year = Number(form.year);
-    if (!form.year.trim() || Number.isNaN(year) || year < 1900 || year > 2100) {
-      errors.year = 'Enter a valid year';
+    const maxVehicleYear = new Date().getFullYear() + 1;
+    if (!form.year.trim() || Number.isNaN(year) || year < 1900 || year > maxVehicleYear) {
+      errors.year = `Enter a valid year between 1900 and ${maxVehicleYear}`;
     }
 
     const mileage = Number(form.mileage);
@@ -231,6 +244,39 @@ export function CreateClientWithVehicleModal({
     const documentNumberError = validateMaxLength(form.documentNumber, 30, 'Document number');
     if (documentNumberError) {
       errors.documentNumber = documentNumberError;
+    }
+
+    const firstNameError = validateMaxLength(form.firstName, 50, 'First name');
+    if (firstNameError) {
+      errors.firstName = firstNameError;
+    }
+
+    const middleNameError = validateMaxLength(form.middleName, 50, 'Middle name');
+    if (middleNameError) {
+      errors.middleName = middleNameError;
+    }
+
+    const lastNameError = validateMaxLength(form.lastName, 50, 'Last name');
+    if (lastNameError) {
+      errors.lastName = lastNameError;
+    }
+
+    const secondLastNameError = validateMaxLength(
+      form.secondLastName,
+      50,
+      'Second last name',
+    );
+    if (secondLastNameError) {
+      errors.secondLastName = secondLastNameError;
+    }
+
+    if (form.birthDate && new Date(`${form.birthDate}T00:00:00`) > new Date()) {
+      errors.birthDate = 'Birth date cannot be in the future.';
+    }
+
+    const colorError = validateMaxLength(form.color, 30, 'Color');
+    if (colorError) {
+      errors.color = colorError;
     }
 
     if (form.email && !isValidEmail(form.email)) {
@@ -350,30 +396,37 @@ export function CreateClientWithVehicleModal({
               value={form.documentNumber}
               onChange={(event) => updateField('documentNumber', event.target.value)}
               error={fieldErrors.documentNumber}
+              required
             />
             <Input
               name="firstName"
               label="First name"
               value={form.firstName}
               onChange={(event) => updateField('firstName', event.target.value)}
+              error={fieldErrors.firstName}
+              required
             />
             <Input
               name="middleName"
               label="Middle name"
               value={form.middleName}
               onChange={(event) => updateField('middleName', event.target.value)}
+              error={fieldErrors.middleName}
             />
             <Input
               name="lastName"
               label="Last name"
               value={form.lastName}
               onChange={(event) => updateField('lastName', event.target.value)}
+              error={fieldErrors.lastName}
+              required
             />
             <Input
               name="secondLastName"
               label="Second last name"
               value={form.secondLastName}
               onChange={(event) => updateField('secondLastName', event.target.value)}
+              error={fieldErrors.secondLastName}
             />
             <Input
               name="birthDate"
@@ -381,6 +434,7 @@ export function CreateClientWithVehicleModal({
               type="date"
               value={form.birthDate}
               onChange={(event) => updateField('birthDate', event.target.value)}
+              error={fieldErrors.birthDate}
             />
             <Input
               name="email"
@@ -435,7 +489,7 @@ export function CreateClientWithVehicleModal({
             />
             <Input
               name="plate"
-              label="Vehicle plate *"
+              label="Vehicle plate"
               value={form.plate}
               onChange={(event) => updateField('plate', event.target.value)}
               error={fieldErrors.plate}
@@ -447,6 +501,10 @@ export function CreateClientWithVehicleModal({
               label="VIN"
               value={form.vin}
               onChange={(event) => updateField('vin', event.target.value)}
+              error={fieldErrors.vin}
+              maxLength={VIN_LENGTH}
+              hint={`${VIN_LENGTH} alphanumeric characters`}
+              required
             />
             <Input
               name="year"
@@ -462,6 +520,7 @@ export function CreateClientWithVehicleModal({
               label="Color"
               value={form.color}
               onChange={(event) => updateField('color', event.target.value)}
+              error={fieldErrors.color}
             />
             <Input
               name="mileage"

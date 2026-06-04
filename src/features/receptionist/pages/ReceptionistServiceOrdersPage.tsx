@@ -93,6 +93,34 @@ function resolveOrderStatusLabel(
   }
 }
 
+function CustomerApprovalBadge({
+  customerApproved,
+}: {
+  customerApproved?: boolean | null;
+}) {
+  if (customerApproved === true) {
+    return (
+      <Badge variant="active" dot>
+        Approved
+      </Badge>
+    );
+  }
+
+  if (customerApproved === false) {
+    return (
+      <Badge variant="cancelled" dot>
+        Rejected
+      </Badge>
+    );
+  }
+
+  return (
+    <Badge variant="pending" dot>
+      Pending approval
+    </Badge>
+  );
+}
+
 function enrichClientOrders(
   orders: ClientServiceOrderSummaryDto[],
   client: ClientSearchResultDto,
@@ -218,6 +246,7 @@ function ServiceOrderDetailContent({
                   <TableHead>Service</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Labor cost</TableHead>
+                  <TableHead>Client approval</TableHead>
                   <TableHead>Description</TableHead>
                 </TableRow>
               </TableHeader>
@@ -230,6 +259,9 @@ function ServiceOrderDetailContent({
                         `Type #${service.serviceTypeId}`}
                     </TableCell>
                     <TableCell>{formatCurrency(service.laborCost)}</TableCell>
+                    <TableCell>
+                      <CustomerApprovalBadge customerApproved={service.customerApproved} />
+                    </TableCell>
                     <TableCell>{service.description || '-'}</TableCell>
                   </TableRow>
                 ))}

@@ -26,7 +26,7 @@ export interface CreateClientWithVehicleRequest {
   modelId: number;
   vehicleTypeId: number;
   plate: string;
-  vin?: string;
+  vin: string;
   year: number;
   color?: string;
   mileage: number;

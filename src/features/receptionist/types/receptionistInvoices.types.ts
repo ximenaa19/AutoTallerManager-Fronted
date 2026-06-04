@@ -39,6 +39,16 @@ export interface InvoiceDetailDto {
   lineType: string;
 }
 
+export interface InvoiceDetailsByInvoiceDto {
+  invoiceId: number;
+  invoiceNumber: string;
+  invoiceStatusId: number;
+  subtotal: number;
+  tax: number;
+  total: number;
+  details: Array<Omit<InvoiceDetailDto, 'invoiceId'>>;
+}
+
 export interface GenerateInvoiceFromServiceOrderRequest {
   tax: number;
   observations?: string;

@@ -1,6 +1,6 @@
 import { httpClient } from '@/api/httpClient';
 import type {
-  ClientInvoiceDetailDto,
+  ClientInvoiceDetailsByInvoiceDto,
   ClientInvoiceDto,
   ClientInvoicePaymentSummaryDto,
 } from '@/features/client/types/clientInvoices.types';
@@ -16,7 +16,17 @@ export const clientInvoicesApi = {
     );
   },
 
-  getInvoiceDetails(invoiceId: number) {
-    return httpClient.get<ClientInvoiceDetailDto[]>(`/api/invoices/${invoiceId}/details`);
+  async getInvoiceDetails(invoiceId: number) {
+    const response = await httpClient.get<ClientInvoiceDetailsByInvoiceDto>(
+      `/api/invoices/${invoiceId}/details`,
+    );
+
+    return {
+      ...response,
+      data: response.data.details.map((detail) => ({
+        ...detail,
+        invoiceId: response.data.invoiceId,
+      })),
+    };
   },
 };
