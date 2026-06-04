@@ -865,41 +865,51 @@
 
 ## Vehicle plate not in MechanicAssignedServiceDto
 
-**Status:** Resolved from backend (2026-06-02)
+**Status:** Resolved — backend enriched (2026-06-03)
 
 **Related page/feature:** Mechanic assignment cards — vehicle identity label
 
-**Confirmed in:** `Application/Features/ServiceExecution/Dtos/MechanicAssignedServiceDto.cs`, `ServiceExecutionService.GetMyAssignedServicesAsync` — only `vehicleId` is projected; vehicle `Plate` is not included despite plate support elsewhere (vehicles CRUD, search, full-detail).
+**Confirmed in:** `MechanicAssignedServiceDto` now includes `vehiclePlate`, `vehicleVin`, `vehicleYear`, `vehicleColor`, plus readable `serviceTypeName`, `specialtyName`, `orderStatusName`, and customer fields.
 
-**Frontend handling:** Show `Vehicle #{vehicleId}` until backend enriches the DTO. Type reserves optional `vehiclePlate` for forward compatibility. Do not call Admin vehicle endpoints to resolve plates from the mechanic portal.
+**Frontend handling:** Show `ABC123 · Vehicle #3` when `vehiclePlate` is returned. Catalog lookups are fallback only. Do not call Admin vehicle endpoints from the mechanic portal.
 
 ---
 
 ## Mechanic assignment metadata gaps
 
-**Status:** Resolved from backend (2026-06-02)
+**Status:** Resolved — backend enriched (2026-06-03)
 
-**Related page/feature:** Assignment card fields (assignment ID, assigned date, order status)
+**Related page/feature:** Assignment card fields (assignment ID, order status)
 
-**Confirmed missing from `MechanicAssignedServiceDto`:** `mechanicAssignmentId`, assignment/assigned date, parent order status.
+**Confirmed in `MechanicAssignedServiceDto`:** `mechanicAssignmentId`, `orderStatusId`, `orderStatusName`, enriched vehicle/customer/service labels.
 
-**Frontend handling:** Display order service ID, service order ID, specialty, work-performed state, and customer approval only. Order status and assignment date deferred to Phase 6.2 (`my-active-orders`) or future DTO enrichment.
+**Frontend handling:** Display enriched fields when returned. Assignment date remains unavailable — deferred unless backend adds it.
 
 ---
 
 ## Mechanic active orders page (Phase 6.2)
 
-**Status:** Resolved — implemented (2026-06-02)
+**Status:** Resolved — updated for DTO enrichment (2026-06-03)
 
 **Related page/feature:** `/mechanic/active-orders`
 
-**Endpoint:** `GET /api/mechanic/my-active-orders` → `MechanicActiveOrderDto[]` (mechanic-scoped; excludes completed/cancelled/voided orders server-side).
+**Endpoint:** `GET /api/mechanic/my-active-orders` → enriched `MechanicActiveOrderDto[]`.
 
-**DTO fields used in UI:** `serviceOrderId`, `vehicleId`, `orderStatusId`, `entryDate`, `estimatedDeliveryDate`, `generalDescription`.
-
-**Not in DTO (do not invent):** `vehiclePlate`, assigned-service count, pending work-report count, per-service names/descriptions. Vehicle label is `Vehicle #{vehicleId}` until backend adds `vehiclePlate`.
+**DTO fields used in UI:** `serviceOrderId`, `vehicleId`, `vehiclePlate`, `orderStatusName`, `assignedServicesCount`, `pendingWorkReportsCount`, `customerName`, `customerDocumentNumber`, `entryDate`, `estimatedDeliveryDate`, `generalDescription`.
 
 **Cross-navigation:** Active order cards link to Assigned Services (no `orderServiceId` on `MechanicActiveOrderDto`).
+
+---
+
+## Mechanic dashboard preview
+
+**Status:** Resolved — implemented (2026-06-03)
+
+**Related page/feature:** `/mechanic/dashboard`
+
+**Confirmed:** `MechanicDashboardDto.activeOrdersPreview[]` returns readable order preview rows with plate, status name, and workload counts.
+
+**Frontend handling:** Dashboard shows preview cards when returned; falls back to `activeServiceOrderIds` only if preview is empty.
 
 ---
 
@@ -907,11 +917,23 @@
 
 ## Mechanic service detail data source
 
-**Status:** Resolved — implemented (2026-06-02)
+**Status:** Resolved — updated (2026-06-03)
 
 **Related page/feature:** `/mechanic/service-detail/:orderServiceId`
 
-**Confirmed:** No dedicated mechanic GET for a single order service. Detail is built from `GET /api/mechanic/my-assigned-services` by matching `orderServiceId`. Unassigned or unknown IDs show an honest empty state (not Admin full-detail).
+**Confirmed:** Primary context from `GET /api/mechanic/my-assigned-services` (match `orderServiceId`). Optional enrichment via `GET /api/service-orders/{serviceOrderId}/full-detail` for requested parts and approval summaries on the matched service line. Full-detail is Mechanic-authorized with assignment-scoped access. On failure, assignment detail remains with a clear notice.
+
+---
+
+## Mechanic part approval status on assignment DTO
+
+**Status:** Partially resolved (2026-06-03)
+
+**Related page/feature:** Service detail requested parts
+
+**Confirmed:** Requested parts and `customerApproved`/`approvalDate` per part come from `ServiceOrderFullDetailDto.services[].parts` via full-detail (not on assignment list DTO).
+
+**Frontend handling:** Service detail shows parts from full-detail when available. Do not fabricate approval badges on assignment list cards.
 
 ---
 
@@ -975,15 +997,17 @@
 
 ---
 
-## Mechanic part approval status on assignment DTO
+## Mechanic change part quantity
 
-**Status:** Deferred — not on assigned service list (2026-06-02)
+**Status:** Resolved — implemented (2026-06-03)
 
-**Related page/feature:** Assigned services after part request
+**Related page/feature:** Service detail requested parts
 
-**Problem:** `MechanicAssignedServiceDto` does not include requested parts or approval state. No mechanic-scoped GET for order service parts.
+**Confirmed:** `PUT /api/order-service-parts/{id}/change-quantity` — body `{ quantity }` — Mechanic authorized.
 
-**Frontend handling:** Show success message after request; do not fabricate approval badges on assignment cards until backend enriches DTO or exposes a mechanic-safe parts list.
+**Frontend handling:** Inline quantity update on service detail for parts returned by full-detail.
+
+---
 ## Admin purchase cancellation
 
 **Status:** Resolved (2026-06-03)
@@ -996,4 +1020,4 @@
 
 ---
 
-*Last reviewed against backend: 2026-06-03 (Admin main sync). Update this file when backend or deployment config changes.*
+*Last reviewed against backend: 2026-06-03 (Mechanic module sync). Update this file when backend or deployment config changes.*

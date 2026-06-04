@@ -1,17 +1,26 @@
-/** Confirmed fields from `MechanicAssignedServiceDto` (backend). */
+/** Confirmed fields from enriched `MechanicAssignedServiceDto` (backend). */
 export interface MechanicAssignedServiceDto {
+  mechanicAssignmentId: number;
   orderServiceId: number;
   serviceOrderId: number;
   vehicleId: number;
   serviceTypeId: number;
+  orderStatusId: number;
+  orderStatusName?: string;
+  vehiclePlate?: string;
+  vehicleVin?: string;
+  vehicleYear?: number;
+  vehicleColor?: string;
+  serviceTypeName?: string;
   description?: string;
   workPerformed?: string;
   laborCost: number;
   customerApproved?: boolean;
   approvalDate?: string;
   specialtyId: number;
-  /** Not returned by backend today; reserved for future DTO enrichment. */
-  vehiclePlate?: string;
+  specialtyName?: string;
+  customerName?: string;
+  customerDocumentNumber?: string;
 }
 
 export type MechanicWorkReportFilter = 'all' | 'needs-report' | 'reported';

@@ -1,9 +1,12 @@
 import { Link } from 'react-router-dom';
 import { Calendar, Car, ClipboardList } from 'lucide-react';
+import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
-import { ServiceOrderStatusBadge } from '@/features/admin/serviceOrders/components/ServiceOrderStatusBadge';
-import type { WorkshopCatalogLookups } from '@/features/admin/serviceOrders/hooks/useWorkshopCatalogLookups';
-import type { MechanicActiveOrderDto } from '@/features/mechanic/types/mechanicActiveOrders.types';
+import type { WorkshopCatalogLookups } from '@/features/admin/serviceOrders/hooks/useWorkshopCatalogLookups';import type { MechanicActiveOrderDto } from '@/features/mechanic/types/mechanicActiveOrders.types';
+import {
+  formatCustomerLabel,
+  resolveOrderStatusName,
+} from '@/features/mechanic/utils/mechanicEnrichedLabels';
 import { formatMechanicVehicleLabel } from '@/features/mechanic/utils/vehicleLabel';
 import { ROUTES } from '@/routes/routePaths';
 import { formatDateTime } from '@/utils/format';
@@ -28,7 +31,16 @@ export function MechanicActiveOrderCard({
   order,
   lookups,
 }: MechanicActiveOrderCardProps) {
-  const vehicleLabel = formatMechanicVehicleLabel(order.vehicleId);
+  const vehicleLabel = formatMechanicVehicleLabel(order.vehicleId, order.vehiclePlate);
+  const orderStatusName = resolveOrderStatusName(
+    order.orderStatusId,
+    order.orderStatusName,
+    lookups,
+  );
+  const customerLabel = formatCustomerLabel(
+    order.customerName,
+    order.customerDocumentNumber,
+  );
 
   return (
     <Card padding="md" className="flex h-full flex-col gap-4">
@@ -47,11 +59,9 @@ export function MechanicActiveOrderCard({
             </span>
           </p>
         </div>
-        <ServiceOrderStatusBadge
-          orderStatusId={order.orderStatusId}
-          catalogNameById={lookups.orderStatusNameById}
-        />
-      </div>
+        <Badge variant="accent" dot>
+          {orderStatusName}
+        </Badge>      </div>
 
       {order.generalDescription?.trim() && (
         <p className="text-sm leading-relaxed text-text-secondary">
@@ -70,14 +80,16 @@ export function MechanicActiveOrderCard({
           }
         />
         <DetailItem label="Vehicle" value={vehicleLabel} />
+        <DetailItem label="Order status" value={orderStatusName} />
         <DetailItem
-          label="Order status"
-          value={
-            lookups.orderStatusNameById.get(order.orderStatusId) ??
-            `Status #${order.orderStatusId}`
-          }
+          label="Your assigned services"
+          value={String(order.assignedServicesCount)}
         />
-      </dl>
+        <DetailItem
+          label="Pending work reports"
+          value={String(order.pendingWorkReportsCount)}
+        />
+        {customerLabel && <DetailItem label="Customer" value={customerLabel} />}      </dl>
 
       <div className="mt-auto flex flex-col gap-3 border-t border-border pt-3">
         <div className="flex flex-wrap items-center gap-3 text-xs text-text-muted">

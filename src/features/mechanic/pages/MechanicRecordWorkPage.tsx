@@ -8,6 +8,7 @@ import { MechanicEmptyState } from '@/features/mechanic/components/MechanicEmpty
 import { MechanicServiceContextCard } from '@/features/mechanic/components/MechanicServiceContextCard';
 import { MechanicWorkReportForm } from '@/features/mechanic/components/MechanicWorkReportForm';
 import { useMechanicServiceDetail } from '@/features/mechanic/hooks/useMechanicServiceDetail';
+import { resolveServiceTypeName } from '@/features/mechanic/utils/mechanicEnrichedLabels';
 import {
   mechanicServiceDetailPath,
   ROUTES,
@@ -101,9 +102,11 @@ export function MechanicRecordWorkPage() {
     );
   }
 
-  const serviceTypeName =
-    lookups.serviceTypeNameById.get(service.serviceTypeId) ??
-    `Service type #${service.serviceTypeId}`;
+  const serviceTypeName = resolveServiceTypeName(
+    service.serviceTypeId,
+    service.serviceTypeName,
+    lookups,
+  );
 
   return (
     <div className="space-y-6">

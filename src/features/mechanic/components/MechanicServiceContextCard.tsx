@@ -3,10 +3,15 @@ import { Card } from '@/components/ui/Card';
 import type { WorkshopCatalogLookups } from '@/features/admin/serviceOrders/hooks/useWorkshopCatalogLookups';
 import { MechanicStatusBadge } from '@/features/mechanic/components/MechanicStatusBadge';
 import type { MechanicAssignedServiceDto } from '@/features/mechanic/types/mechanicAssignments.types';
+import {
+  formatCustomerLabel,
+  resolveOrderStatusName,
+  resolveServiceTypeName,
+  resolveSpecialtyName,
+} from '@/features/mechanic/utils/mechanicEnrichedLabels';
 import { formatMechanicVehicleLabel } from '@/features/mechanic/utils/vehicleLabel';
 import { getWorkReportStatus } from '@/features/mechanic/utils/workReportStatus';
 import { formatCurrency, formatDateTime } from '@/utils/format';
-
 export interface MechanicServiceContextCardProps {
   service: MechanicAssignedServiceDto;
   lookups: WorkshopCatalogLookups;
@@ -27,12 +32,25 @@ export function MechanicServiceContextCard({
   service,
   lookups,
 }: MechanicServiceContextCardProps) {
-  const serviceTypeName =
-    lookups.serviceTypeNameById.get(service.serviceTypeId) ??
-    `Service type #${service.serviceTypeId}`;
-  const specialtyName =
-    lookups.specialtyNameById.get(service.specialtyId) ??
-    `Specialty #${service.specialtyId}`;
+  const serviceTypeName = resolveServiceTypeName(
+    service.serviceTypeId,
+    service.serviceTypeName,
+    lookups,
+  );
+  const specialtyName = resolveSpecialtyName(
+    service.specialtyId,
+    service.specialtyName,
+    lookups,
+  );
+  const orderStatusName = resolveOrderStatusName(
+    service.orderStatusId,
+    service.orderStatusName,
+    lookups,
+  );
+  const customerLabel = formatCustomerLabel(
+    service.customerName,
+    service.customerDocumentNumber,
+  );
   const workReportStatus = getWorkReportStatus(service.workPerformed);
 
   return (
@@ -70,6 +88,17 @@ export function MechanicServiceContextCard({
           value={formatMechanicVehicleLabel(service.vehicleId, service.vehiclePlate)}
         />
         <DetailItem label="Specialty" value={specialtyName} />
+        <DetailItem label="Order status" value={orderStatusName} />
+        {customerLabel && <DetailItem label="Customer" value={customerLabel} />}
+        {service.vehicleVin?.trim() && (
+          <DetailItem label="VIN" value={service.vehicleVin.trim()} />
+        )}
+        {service.vehicleYear != null && (
+          <DetailItem label="Year" value={String(service.vehicleYear)} />
+        )}
+        {service.vehicleColor?.trim() && (
+          <DetailItem label="Color" value={service.vehicleColor.trim()} />
+        )}
         <DetailItem label="Labor cost" value={formatCurrency(service.laborCost)} />
         <DetailItem
           label="Customer approval"

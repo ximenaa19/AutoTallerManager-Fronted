@@ -11,7 +11,9 @@ import { MechanicServiceDetailPanel } from '@/features/mechanic/components/Mecha
 import { MechanicPartRequestModal } from '@/features/mechanic/components/MechanicPartRequestModal';
 import { MechanicWorkReportModal } from '@/features/mechanic/components/MechanicWorkReportModal';
 import { mechanicPartRequestsApi } from '@/features/mechanic/api/mechanicPartRequests.api';
+import { MechanicRequestedPartsSection } from '@/features/mechanic/components/MechanicRequestedPartsSection';
 import { useMechanicServiceDetail } from '@/features/mechanic/hooks/useMechanicServiceDetail';
+import { resolveServiceTypeName } from '@/features/mechanic/utils/mechanicEnrichedLabels';
 import {
   mechanicRecordWorkPath,
   ROUTES,
@@ -43,7 +45,10 @@ export function MechanicServiceDetailPage() {
 
   const {
     service,
+    requestedParts,
+    fullDetailNotice,
     isLoading,
+    isLoadingParts,
     error,
     notFound,
     retry,
@@ -124,9 +129,11 @@ export function MechanicServiceDetailPage() {
     );
   }
 
-  const serviceTypeName =
-    lookups.serviceTypeNameById.get(service.serviceTypeId) ??
-    `Service type #${service.serviceTypeId}`;
+  const serviceTypeName = resolveServiceTypeName(
+    service.serviceTypeId,
+    service.serviceTypeName,
+    lookups,
+  );
 
   return (
     <div className="space-y-6">
@@ -167,6 +174,13 @@ export function MechanicServiceDetailPage() {
         lookups={lookups}
         onRecordWork={() => setRecordModalOpen(true)}
         onRequestPart={() => setPartRequestModalOpen(true)}
+      />
+
+      <MechanicRequestedPartsSection
+        parts={requestedParts}
+        isLoading={isLoadingParts}
+        notice={fullDetailNotice}
+        onPartsChanged={refresh}
       />
 
       <MechanicPartRequestModal

@@ -41,7 +41,7 @@ export function MechanicDashboardCards({ data }: MechanicDashboardCardsProps) {
         value={formatNumber(data.requestedPartsPendingApproval)}
         icon={<Package className="size-5" />}
         tone="danger"
-        footer="Part requests awaiting staff review. Request Parts workflow comes in the next phase."
+        footer="Part requests awaiting customer or staff approval."
       />
     </DashboardGrid>
   );

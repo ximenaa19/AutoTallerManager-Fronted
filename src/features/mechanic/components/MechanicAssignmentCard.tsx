@@ -5,6 +5,11 @@ import type { WorkshopCatalogLookups } from '@/features/admin/serviceOrders/hook
 import { MechanicStatusBadge } from '@/features/mechanic/components/MechanicStatusBadge';
 import { getWorkReportStatus } from '@/features/mechanic/utils/workReportStatus';
 import type { MechanicAssignedServiceDto } from '@/features/mechanic/types/mechanicAssignments.types';
+import {
+  formatCustomerLabel,
+  resolveServiceTypeName,
+  resolveSpecialtyName,
+} from '@/features/mechanic/utils/mechanicEnrichedLabels';
 import { formatMechanicVehicleLabel } from '@/features/mechanic/utils/vehicleLabel';
 import {
   mechanicRecordWorkPath,
@@ -33,12 +38,20 @@ export function MechanicAssignmentCard({
   assignment,
   lookups,
 }: MechanicAssignmentCardProps) {
-  const serviceTypeName =
-    lookups.serviceTypeNameById.get(assignment.serviceTypeId) ??
-    `Service type #${assignment.serviceTypeId}`;
-  const specialtyName =
-    lookups.specialtyNameById.get(assignment.specialtyId) ??
-    `Specialty #${assignment.specialtyId}`;
+  const serviceTypeName = resolveServiceTypeName(
+    assignment.serviceTypeId,
+    assignment.serviceTypeName,
+    lookups,
+  );
+  const specialtyName = resolveSpecialtyName(
+    assignment.specialtyId,
+    assignment.specialtyName,
+    lookups,
+  );
+  const customerLabel = formatCustomerLabel(
+    assignment.customerName,
+    assignment.customerDocumentNumber,
+  );
   const workReportStatus = getWorkReportStatus(assignment.workPerformed);
 
   return (
@@ -76,6 +89,7 @@ export function MechanicAssignmentCard({
           )}
         />
         <DetailItem label="Specialty" value={specialtyName} />
+        {customerLabel && <DetailItem label="Customer" value={customerLabel} />}
         <DetailItem label="Labor cost" value={formatCurrency(assignment.laborCost)} />
         <DetailItem
           label="Work performed"
@@ -91,7 +105,7 @@ export function MechanicAssignmentCard({
         <div className="flex flex-wrap items-center gap-3 text-xs text-text-muted">
           <span className="inline-flex items-center gap-1.5">
             <Car className="size-3.5" aria-hidden />
-            Vehicle #{assignment.vehicleId}
+            {formatMechanicVehicleLabel(assignment.vehicleId, assignment.vehiclePlate)}
           </span>
           <span className="inline-flex items-center gap-1.5">
             <ClipboardList className="size-3.5" aria-hidden />

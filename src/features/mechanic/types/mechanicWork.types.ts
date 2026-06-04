@@ -1,3 +1,4 @@
+import type { ServiceOrderPartSummaryDto } from '@/features/admin/serviceOrders/types/serviceOrders.types';
 import type { MechanicAssignedServiceDto } from '@/features/mechanic/types/mechanicAssignments.types';
 import type { ServiceExecutionResultDto } from '@/features/admin/serviceOrders/types/orderServices.types';
 
@@ -12,7 +13,10 @@ export type { ServiceExecutionResultDto };
 
 export interface MechanicServiceDetailState {
   service: MechanicAssignedServiceDto | null;
+  requestedParts: ServiceOrderPartSummaryDto[];
+  fullDetailNotice: string | null;
   isLoading: boolean;
+  isLoadingParts: boolean;
   error: string | null;
   notFound: boolean;
   retry: () => void;

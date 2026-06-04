@@ -12,6 +12,9 @@ import type {
   MechanicActiveOrderFiltersState,
 } from '@/features/mechanic/types/mechanicActiveOrders.types';
 import { getMechanicActiveOrderStatusFilterOptions } from '@/features/mechanic/utils/activeOrderStatusFilter';
+import {
+  resolveOrderStatusName,
+} from '@/features/mechanic/utils/mechanicEnrichedLabels';
 
 const defaultFilters: MechanicActiveOrderFiltersState = {
   searchTerm: '',
@@ -21,7 +24,7 @@ const defaultFilters: MechanicActiveOrderFiltersState = {
 function filterActiveOrders(
   orders: MechanicActiveOrderDto[],
   filters: MechanicActiveOrderFiltersState,
-  orderStatusNameById: Map<number, string>,
+  lookups: ReturnType<typeof useWorkshopCatalogLookups>['lookups'],
 ): MechanicActiveOrderDto[] {
   const normalizedSearch = filters.searchTerm.trim().toLowerCase();
 
@@ -37,12 +40,19 @@ function filterActiveOrders(
       return true;
     }
 
-    const statusName =
-      orderStatusNameById.get(order.orderStatusId) ?? '';
+    const statusName = resolveOrderStatusName(
+      order.orderStatusId,
+      order.orderStatusName,
+      lookups,
+    );
 
     const haystack = [
       String(order.serviceOrderId),
       String(order.vehicleId),
+      order.vehiclePlate,
+      order.vehicleVin,
+      order.customerName,
+      order.customerDocumentNumber,
       order.generalDescription,
       statusName,
     ]
@@ -78,8 +88,8 @@ export function MechanicActiveOrdersPage() {
   );
 
   const filteredOrders = useMemo(
-    () => filterActiveOrders(orders, filters, lookups.orderStatusNameById),
-    [orders, filters, lookups.orderStatusNameById],
+    () => filterActiveOrders(orders, filters, lookups),
+    [orders, filters, lookups],
   );
 
   if (isLoading || catalogsLoading) {

@@ -1,6 +1,6 @@
 # AutoTallerManager API Contract
 
-> **Document review:** 2026-06-03 (Admin sync). Admin mechanics aggregate endpoints, invoice details by `invoiceId`, purchase cancel/reverse, audit read-only API, and vehicle plate contract re-verified against `AutoTallerManager-Backend` `main` (commit `ade98b70`).
+> **Document review:** 2026-06-03 (Mechanic sync). Mechanic DTO enrichment, `activeOrdersPreview`, assignment-scoped `GET /api/service-orders/{id}/full-detail`, and part quantity change re-verified against `AutoTallerManager-Backend` `main` (commit `ade98b70`).
 
 ## 1. Purpose of This Document
 
@@ -1192,8 +1192,22 @@ All dashboard actions accept **no query parameters** (`DashboardsController`). D
 | pendingWorkReports | int | |
 | requestedPartsPendingApproval | int | |
 | activeServiceOrderIds | int[] | |
+| activeOrdersPreview | `MechanicDashboardActiveOrderDto[]` | Enriched preview rows (plate, status name, counts) |
 
-**Source DTO:** `Application/Features/Dashboards/Dtos/MechanicDashboardDto.cs`
+**`MechanicDashboardActiveOrderDto`:**
+
+| Field | Type |
+|-------|------|
+| serviceOrderId | int |
+| vehicleId | int |
+| vehiclePlate | string? |
+| orderStatusName | string? |
+| entryDate | string (ISO) |
+| estimatedDeliveryDate | string? (ISO) |
+| assignedServicesCount | int |
+| pendingWorkReportsCount | int |
+
+**Source DTO:** `Application/Features/Dashboards/Dtos/MechanicDashboardDto.cs`, `MechanicDashboardActiveOrderDto.cs`
 
 #### GET /api/receptionist/dashboard
 
@@ -1441,35 +1455,57 @@ All search endpoints require query parameter **`term`**.
 
 | Field | Type | Notes |
 |-------|------|-------|
+| mechanicAssignmentId | int | |
 | orderServiceId | int | |
 | serviceOrderId | int | |
-| vehicleId | int | **No `vehiclePlate`** — plate exists on vehicles but is not projected in this DTO |
-| serviceTypeId | int | Resolve label via `GET /api/catalogs/workshop` |
+| vehicleId | int | |
+| serviceTypeId | int | |
+| orderStatusId | int | |
+| orderStatusName | string? | Prefer over catalog lookup when present |
+| vehiclePlate | string? | Prefer `ABC123 · Vehicle #3` in UI |
+| vehicleVin | string? | |
+| vehicleYear | int? | |
+| vehicleColor | string? | |
+| serviceTypeName | string? | Prefer over catalog lookup when present |
 | description | string? | |
 | workPerformed | string? | Empty when work report pending |
 | laborCost | decimal | |
 | customerApproved | bool? | |
 | approvalDate | string? (ISO) | |
 | specialtyId | int | Assignment specialty |
+| specialtyName | string? | Prefer over catalog lookup when present |
+| customerName | string? | |
+| customerDocumentNumber | string? | |
 
-**Not returned:** `mechanicAssignmentId`, assignment date, order status, vehicle plate.
+**Frontend:** `/mechanic/assigned-services` and service detail use enriched names/plates when returned. Catalog lookups remain fallback only.
 
-**`MechanicActiveOrderDto`** (Phase 6.2 — `GET /api/mechanic/my-active-orders`):
+**`MechanicActiveOrderDto`** (`GET /api/mechanic/my-active-orders`):
 
 | Field | Type |
 |-------|------|
 | serviceOrderId | int |
 | vehicleId | int |
 | orderStatusId | int |
+| orderStatusName | string? |
+| vehiclePlate | string? |
+| vehicleVin | string? |
+| vehicleYear | int? |
+| vehicleColor | string? |
+| assignedServicesCount | int |
+| pendingWorkReportsCount | int |
+| customerName | string? |
+| customerDocumentNumber | string? |
 | entryDate | string (ISO) |
 | estimatedDeliveryDate | string? (ISO) |
 | generalDescription | string? |
 
-**Source DTO:** `Application/Features/ServiceExecution/Dtos/MechanicActiveOrderDto.cs` — **no `vehiclePlate`**.
+**Source DTO:** `Application/Features/ServiceExecution/Dtos/MechanicActiveOrderDto.cs`
 
-**Frontend (Phase 6.2):** `/mechanic/active-orders` consumes this endpoint only. Order status labels resolve via `GET /api/catalogs/workshop` (`orderStatuses`). Search/filter: order ID, vehicle ID, status, general description. Cards link to Assigned Services for per-service detail (active orders DTO has no `orderServiceId`).
+**Frontend (Phase 6.2+):** `/mechanic/active-orders` uses enriched plate/status/customer fields when returned. Search/filter includes plate, customer, status name, and IDs. Cards link to Assigned Services for per-service detail (no `orderServiceId` on this DTO).
 
-**Frontend (Phase 6.3):** Service detail and record work use `GET /api/mechanic/my-assigned-services` (find row by `orderServiceId`) and `PUT /api/mechanic/order-services/{id}/work-performed`. There is **no** mechanic-specific single-service GET. Do not use `GET /api/service-orders/{id}/full-detail` to enrich mechanic assignment views unless product explicitly opts in (assignment-scoped DTO is the default).
+**Frontend (Phase 6.3+):** Service detail loads assignment from `GET /api/mechanic/my-assigned-services` (match `orderServiceId`), then optionally enriches requested parts via `GET /api/service-orders/{serviceOrderId}/full-detail` (Mechanic role; assignment-scoped access). On full-detail failure, show assignment context only with a clear notice — do not call Admin-only endpoints.
+
+**Part quantity:** `PUT /api/order-service-parts/{id}/change-quantity` — Mechanic may update quantity for parts returned in full-detail.
 
 > There is **no** dedicated “work history” list endpoint for mechanics. Use assigned/active endpoints or product decision to filter client-side.
 

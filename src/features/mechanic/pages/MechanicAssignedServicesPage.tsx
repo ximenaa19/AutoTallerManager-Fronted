@@ -7,6 +7,10 @@ import { MechanicAssignmentFilters } from '@/features/mechanic/components/Mechan
 import { MechanicEmptyState } from '@/features/mechanic/components/MechanicEmptyState';
 import { MechanicWorkBoard } from '@/features/mechanic/components/MechanicWorkBoard';
 import { getWorkReportStatus } from '@/features/mechanic/utils/workReportStatus';
+import {
+  resolveServiceTypeName,
+  resolveSpecialtyName,
+} from '@/features/mechanic/utils/mechanicEnrichedLabels';
 import { useMechanicAssignments } from '@/features/mechanic/hooks/useMechanicAssignments';
 import type {
   MechanicAssignedServiceDto,
@@ -61,19 +65,30 @@ function filterAssignments(
       return true;
     }
 
-    const serviceTypeName =
-      lookups.serviceTypeNameById.get(assignment.serviceTypeId) ?? '';
-    const specialtyName =
-      lookups.specialtyNameById.get(assignment.specialtyId) ?? '';
+    const serviceTypeName = resolveServiceTypeName(
+      assignment.serviceTypeId,
+      assignment.serviceTypeName,
+      lookups,
+    );
+    const specialtyName = resolveSpecialtyName(
+      assignment.specialtyId,
+      assignment.specialtyName,
+      lookups,
+    );
 
     const haystack = [
       String(assignment.orderServiceId),
       String(assignment.serviceOrderId),
       String(assignment.vehicleId),
+      assignment.vehiclePlate,
+      assignment.vehicleVin,
+      assignment.customerName,
+      assignment.customerDocumentNumber,
       assignment.description,
       assignment.workPerformed,
       serviceTypeName,
       specialtyName,
+      assignment.orderStatusName,
     ]
       .filter(Boolean)
       .join(' ')
