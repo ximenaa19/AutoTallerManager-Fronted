@@ -833,6 +833,181 @@
 
 ---
 
+*Last reviewed against backend: 2026-06-02 (Phase 6.4 Mechanic request parts & search parts). Update this file when backend or deployment config changes.*
+
+---
+
+# Phase 6.1 — Mechanic Dashboard & Assigned Services (2026-06-02)
+
+## Mechanic dashboard endpoint confirmed
+
+**Status:** Resolved from backend (2026-06-02)
+
+**Related page/feature:** Mechanic → Dashboard (`/mechanic/dashboard`)
+
+**Confirmed:** `GET /api/mechanic/dashboard` → `MechanicDashboardDto` (assignedServices, activeOrders, pendingWorkReports, requestedPartsPendingApproval, activeServiceOrderIds). Scoped by JWT `personId` claim.
+
+**Frontend handling:** KPI cards bind directly to dashboard DTO; no client-side composition required.
+
+---
+
+## Mechanic assigned services endpoint confirmed
+
+**Status:** Resolved from backend (2026-06-02)
+
+**Related page/feature:** Mechanic → Assigned Services (`/mechanic/assigned-services`)
+
+**Confirmed:** `GET /api/mechanic/my-assigned-services` → `MechanicAssignedServiceDto[]`. Returns only assignments where `mechanicPersonId` matches authenticated mechanic. Safe for Mechanic role — do **not** use `GET /api/mechanic-assignments` (Admin/Receptionist only).
+
+**Frontend handling:** Assigned work board uses this endpoint only.
+
+---
+
+## Vehicle plate not in MechanicAssignedServiceDto
+
+**Status:** Resolved — backend enriched (2026-06-03)
+
+**Related page/feature:** Mechanic assignment cards — vehicle identity label
+
+**Confirmed in:** `MechanicAssignedServiceDto` now includes `vehiclePlate`, `vehicleVin`, `vehicleYear`, `vehicleColor`, plus readable `serviceTypeName`, `specialtyName`, `orderStatusName`, and customer fields.
+
+**Frontend handling:** Show `ABC123 · Vehicle #3` when `vehiclePlate` is returned. Catalog lookups are fallback only. Do not call Admin vehicle endpoints from the mechanic portal.
+
+---
+
+## Mechanic assignment metadata gaps
+
+**Status:** Resolved — backend enriched (2026-06-03)
+
+**Related page/feature:** Assignment card fields (assignment ID, order status)
+
+**Confirmed in `MechanicAssignedServiceDto`:** `mechanicAssignmentId`, `orderStatusId`, `orderStatusName`, enriched vehicle/customer/service labels.
+
+**Frontend handling:** Display enriched fields when returned. Assignment date remains unavailable — deferred unless backend adds it.
+
+---
+
+## Mechanic active orders page (Phase 6.2)
+
+**Status:** Resolved — updated for DTO enrichment (2026-06-03)
+
+**Related page/feature:** `/mechanic/active-orders`
+
+**Endpoint:** `GET /api/mechanic/my-active-orders` → enriched `MechanicActiveOrderDto[]`.
+
+**DTO fields used in UI:** `serviceOrderId`, `vehicleId`, `vehiclePlate`, `orderStatusName`, `assignedServicesCount`, `pendingWorkReportsCount`, `customerName`, `customerDocumentNumber`, `entryDate`, `estimatedDeliveryDate`, `generalDescription`.
+
+**Cross-navigation:** Active order cards link to Assigned Services (no `orderServiceId` on `MechanicActiveOrderDto`).
+
+---
+
+## Mechanic dashboard preview
+
+**Status:** Resolved — implemented (2026-06-03)
+
+**Related page/feature:** `/mechanic/dashboard`
+
+**Confirmed:** `MechanicDashboardDto.activeOrdersPreview[]` returns readable order preview rows with plate, status name, and workload counts.
+
+**Frontend handling:** Dashboard shows preview cards when returned; falls back to `activeServiceOrderIds` only if preview is empty.
+
+---
+
+# Phase 6.3 — Mechanic Service Detail & Record Work (2026-06-02)
+
+## Mechanic service detail data source
+
+**Status:** Resolved — updated (2026-06-03)
+
+**Related page/feature:** `/mechanic/service-detail/:orderServiceId`
+
+**Confirmed:** Primary context from `GET /api/mechanic/my-assigned-services` (match `orderServiceId`). Optional enrichment via `GET /api/service-orders/{serviceOrderId}/full-detail` for requested parts and approval summaries on the matched service line. Full-detail is Mechanic-authorized with assignment-scoped access. On failure, assignment detail remains with a clear notice.
+
+---
+
+## Mechanic part approval status on assignment DTO
+
+**Status:** Partially resolved (2026-06-03)
+
+**Related page/feature:** Service detail requested parts
+
+**Confirmed:** Requested parts and `customerApproved`/`approvalDate` per part come from `ServiceOrderFullDetailDto.services[].parts` via full-detail (not on assignment list DTO).
+
+**Frontend handling:** Service detail shows parts from full-detail when available. Do not fabricate approval badges on assignment list cards.
+
+---
+
+## Mechanic work report endpoint
+
+**Status:** Resolved — implemented (2026-06-02)
+
+**Related page/feature:** `/mechanic/record-work/:orderServiceId`, work report modal on service detail
+
+**Confirmed:** `PUT /api/mechanic/order-services/{id}/work-performed` with `UpdateWorkPerformedRequest` (`workPerformed` required non-empty; `laborCost` required in model — frontend sends existing assignment `laborCost` unchanged; mechanic UI does not edit labor cost).
+
+**Success:** `ServiceExecutionResultDto`. Refresh assigned services after save.
+
+---
+
+## Mechanic work history
+
+**Status:** Deferred / Not supported by backend yet (unchanged)
+
+**Related page/feature:** `/mechanic/history`
+
+**Resolution:** No list endpoint. Nav item remains `kind: 'deferred'`.
+
+---
+
+# Phase 6.4 — Mechanic Request Parts & Search Parts (2026-06-02)
+
+## Mechanic part search endpoint
+
+**Status:** Resolved from backend (2026-06-02)
+
+**Related page/feature:** `/mechanic/parts/search`
+
+**Confirmed:** `GET /api/search/parts?term=` — roles Admin, Receptionist, Mechanic (`SearchController`). `PartSearchResultDto`: `partId`, `code`, `description`, `stock`, `minimumStock`, `unitPrice`, `isActive`. Term required, min length 2 (`SearchService.ValidateSearchTerm`). Max 20 results.
+
+**Frontend handling:** Read-only search page; no CRUD, stock adjust, or purchase UI. Category/brand not in search DTO — not displayed.
+
+---
+
+## Mechanic request part endpoint
+
+**Status:** Resolved from backend (2026-06-02)
+
+**Related page/feature:** `/mechanic/parts/request`, `/mechanic/parts/request/:orderServiceId`, request modal on service detail
+
+**Confirmed:** `POST /api/order-services/{id}/request-part` — body `{ partId, quantity, appliedUnitPrice }` (`RequestOrderServicePartRequest`). Success: `ServiceExecutionResultDto`. Mechanic must be assigned to the order service unless Admin (`ServiceExecutionService.RequestPartAsync`).
+
+**Frontend handling:** Contextual flow from assigned services / service detail only. Sidebar `/mechanic/parts/request` shows guidance without standalone request. `appliedUnitPrice` defaults from selected part catalog price.
+
+---
+
+## Part category/brand on mechanic search
+
+**Status:** Resolved — not in API (2026-06-02)
+
+**Related page/feature:** Mechanic search result cards
+
+**Confirmed:** `PartSearchResultDto` has no category or brand fields.
+
+**Frontend handling:** Do not display category/brand on mechanic search or request UI.
+
+---
+
+## Mechanic change part quantity
+
+**Status:** Resolved — implemented (2026-06-03)
+
+**Related page/feature:** Service detail requested parts
+
+**Confirmed:** `PUT /api/order-service-parts/{id}/change-quantity` — body `{ quantity }` — Mechanic authorized.
+
+**Frontend handling:** Inline quantity update on service detail for parts returned by full-detail.
+
+---
 ## Admin purchase cancellation
 
 **Status:** Resolved (2026-06-03)
@@ -845,4 +1020,4 @@
 
 ---
 
-*Last reviewed against backend: 2026-06-03 (Admin main sync). Update this file when backend or deployment config changes.*
+*Last reviewed against backend: 2026-06-03 (Mechanic module sync). Update this file when backend or deployment config changes.*

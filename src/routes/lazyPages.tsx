@@ -43,8 +43,56 @@ export const ReceptionistDashboardPage = lazy(() =>
 );
 
 export const MechanicDashboardPage = lazy(() =>
-  import('@/pages/dashboards/MechanicDashboardPage').then((module) => ({
+  import('@/features/mechanic/pages/MechanicDashboardPage').then((module) => ({
     default: module.MechanicDashboardPage,
+  })),
+);
+
+export const MechanicAssignedServicesPage = lazy(() =>
+  import('@/features/mechanic/pages/MechanicAssignedServicesPage').then((module) => ({
+    default: module.MechanicAssignedServicesPage,
+  })),
+);
+
+export const MechanicActiveOrdersPage = lazy(() =>
+  import('@/features/mechanic/pages/MechanicActiveOrdersPage').then((module) => ({
+    default: module.MechanicActiveOrdersPage,
+  })),
+);
+
+export const MechanicContextualGuidancePage = lazy(() =>
+  import('@/features/mechanic/pages/MechanicContextualGuidancePage').then((module) => ({
+    default: module.MechanicContextualGuidancePage,
+  })),
+);
+
+export const MechanicServiceDetailPage = lazy(() =>
+  import('@/features/mechanic/pages/MechanicServiceDetailPage').then((module) => ({
+    default: module.MechanicServiceDetailPage,
+  })),
+);
+
+export const MechanicRecordWorkPage = lazy(() =>
+  import('@/features/mechanic/pages/MechanicRecordWorkPage').then((module) => ({
+    default: module.MechanicRecordWorkPage,
+  })),
+);
+
+export const MechanicRequestPartsPage = lazy(() =>
+  import('@/features/mechanic/pages/MechanicRequestPartsPage').then((module) => ({
+    default: module.MechanicRequestPartsPage,
+  })),
+);
+
+export const MechanicRequestPartsWithServicePage = lazy(() =>
+  import('@/features/mechanic/pages/MechanicRequestPartsWithServicePage').then((module) => ({
+    default: module.MechanicRequestPartsWithServicePage,
+  })),
+);
+
+export const MechanicSearchPartsPage = lazy(() =>
+  import('@/features/mechanic/pages/MechanicSearchPartsPage').then((module) => ({
+    default: module.MechanicSearchPartsPage,
   })),
 );
 
