@@ -1,10 +1,10 @@
 import { httpClient } from '@/api/httpClient';
-import type { OrderServiceDto } from '@/features/admin/serviceOrders/types/orderServices.types';
+import type { MechanicSearchResultDto } from '@/features/admin/mechanics/types/mechanics.types';
 import type {
-  MechanicAssignmentDto,
-  MechanicSearchResultDto,
-  MechanicSpecialtyAssignmentDto,
-} from '@/features/admin/mechanics/types/mechanics.types';
+  AdminMechanicDetailDto,
+  AdminMechanicListItemDto,
+  AdminMechanicWorkloadDto,
+} from '@/features/admin/mechanics/types/adminMechanics.types';
 
 export const mechanicsApi = {
   searchMechanics(term: string) {
@@ -13,17 +13,19 @@ export const mechanicsApi = {
     });
   },
 
-  getMechanicAssignments() {
-    return httpClient.get<MechanicAssignmentDto[]>('/api/mechanic-assignments');
+  getAll() {
+    return httpClient.get<AdminMechanicListItemDto[]>('/api/admin/mechanics');
   },
 
-  getMechanicSpecialtyAssignments() {
-    return httpClient.get<MechanicSpecialtyAssignmentDto[]>(
-      '/api/mechanic-specialty-assignments',
+  getByPersonId(personId: number) {
+    return httpClient.get<AdminMechanicDetailDto>(
+      `/api/admin/mechanics/${personId}`,
     );
   },
 
-  getOrderServices() {
-    return httpClient.get<OrderServiceDto[]>('/api/order-services');
+  getWorkload(personId: number) {
+    return httpClient.get<AdminMechanicWorkloadDto>(
+      `/api/admin/mechanics/${personId}/workload`,
+    );
   },
 };

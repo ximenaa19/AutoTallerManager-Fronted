@@ -15,16 +15,17 @@ import {
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { accountApi } from '@/features/account/api/account.api';
+import {
+  formatAccountCountryLabel,
+  formatAccountDocumentTypeLabel,
+  formatAccountGenderLabel,
+  useAccountProfileCatalogLookups,
+} from '@/features/account/hooks/useAccountProfileCatalogLookups';
 import type {
   AccountProfileDto,
   UpdateAccountProfileRequest,
 } from '@/features/account/types/account.types';
 import { AuthErrorBanner } from '@/features/auth/components/AuthErrorBanner';
-import {
-  formatDocumentTypeLabel,
-  formatGenderLabel,
-  usePersonCatalogLookups,
-} from '@/features/admin/customers/hooks/usePersonCatalogLookups';
 import {
   isValidEmail,
   validateMaxLength,
@@ -77,8 +78,12 @@ function buildUpdatePayload(form: ProfileFormState): UpdateAccountProfileRequest
 }
 
 export function AccountProfilePage() {
-  const { catalogs, lookups, isLoading: catalogsLoading, error: catalogsError } =
-    usePersonCatalogLookups();
+  const {
+    catalogs,
+    lookups,
+    isLoading: catalogsLoading,
+    catalogsUnavailable,
+  } = useAccountProfileCatalogLookups();
   const [profile, setProfile] = useState<AccountProfileDto | null>(null);
   const [form, setForm] = useState<ProfileFormState | null>(null);
   const [fieldErrors, setFieldErrors] = useState<ProfileFieldErrors>({});
@@ -184,7 +189,7 @@ export function AccountProfilePage() {
     }
   };
 
-  if (isLoading || catalogsLoading) {
+  if (isLoading) {
     return <LoadingState title="Loading profile" fullPage />;
   }
 
@@ -214,6 +219,8 @@ export function AccountProfilePage() {
       label: item.name,
     })) ?? [];
 
+  const catalogSelectsDisabled = catalogsUnavailable || catalogsLoading;
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="space-y-2">
@@ -225,8 +232,12 @@ export function AccountProfilePage() {
         </p>
       </div>
 
-      {catalogsError && (
-        <AuthErrorBanner message={`Catalog lookup failed: ${catalogsError}`} />
+      {catalogsUnavailable && (
+        <p className="rounded-lg border border-border bg-bg-surface px-4 py-3 text-sm text-text-secondary">
+          Dropdown catalogs are temporarily unavailable. Your profile is still shown below, and
+          you can save other fields. Gender and phone country selects are disabled until catalogs
+          load.
+        </p>
       )}
 
       {apiError && <AuthErrorBanner message={apiError} />}
@@ -249,7 +260,7 @@ export function AccountProfilePage() {
           <div>
             <p className="text-xs font-medium text-text-secondary">Document type</p>
             <p className="text-sm text-text-primary">
-              {formatDocumentTypeLabel(profile.documentTypeId, lookups)}
+              {formatAccountDocumentTypeLabel(profile.documentTypeId, lookups)}
             </p>
           </div>
           <div>
@@ -334,10 +345,11 @@ export function AccountProfilePage() {
               onChange={(event) => updateField('genderId', event.target.value)}
               placeholder="Not specified"
               options={genderOptions}
+              disabled={catalogSelectsDisabled}
             />
-            {!form.genderId && profile.genderId && (
+            {(catalogSelectsDisabled || !form.genderId) && profile.genderId && (
               <p className="text-xs text-text-secondary sm:col-span-2">
-                Current: {formatGenderLabel(profile.genderId, lookups)}
+                Current: {formatAccountGenderLabel(profile.genderId, lookups)}
               </p>
             )}
           </CardContent>
@@ -365,7 +377,14 @@ export function AccountProfilePage() {
               placeholder="Select country"
               options={countryOptions}
               error={fieldErrors.phoneCountryId}
+              disabled={catalogSelectsDisabled}
             />
+            {catalogSelectsDisabled && profile.primaryPhoneCountryId && (
+              <p className="text-xs text-text-secondary sm:col-span-2">
+                Current:{' '}
+                {formatAccountCountryLabel(profile.primaryPhoneCountryId, catalogs)}
+              </p>
+            )}
             <Input
               label="Phone number"
               name="phoneNumber"

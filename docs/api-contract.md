@@ -1,6 +1,6 @@
 # AutoTallerManager API Contract
 
-> **Document review:** 2026-05-29 (open-questions pass). DTO shapes in Section 10 and ownership/error codes were re-verified against `AutoTallerManager-Backend` Application layer source. Section 8 auth roles were re-verified against controller source.
+> **Document review:** 2026-06-03 (Mechanic sync). Mechanic DTO enrichment, `activeOrdersPreview`, assignment-scoped `GET /api/service-orders/{id}/full-detail`, and part quantity change re-verified against `AutoTallerManager-Backend` `main` (commit `ade98b70`).
 
 ## 1. Purpose of This Document
 
@@ -383,16 +383,13 @@ Total documented endpoints: **303**
 | Admin Audits | GET | `/api/admin/audits/recent` | Admin | List all | `Api/Controllers/AdminAuditQueriesController.cs` |
 | Admin Audits | GET | `/api/admin/audits/by-entity` | Admin | List all | `Api/Controllers/AdminAuditQueriesController.cs` |
 | Admin Audits | GET | `/api/admin/audits/by-user/{userId}` | Admin | Get by ID | `Api/Controllers/AdminAuditQueriesController.cs` |
-| AuditActionTypes | GET | `/api/audit-action-types` | Admin | List all | `Api/Controllers/AuditActionTypesController.cs` |
-| AuditActionTypes | GET | `/api/audit-action-types/{id}` | Admin | Get by ID | `Api/Controllers/AuditActionTypesController.cs` |
-| AuditActionTypes | POST | `/api/audit-action-types` | Admin | Create | `Api/Controllers/AuditActionTypesController.cs` |
-| AuditActionTypes | PUT | `/api/audit-action-types/{id}` | Admin | Update | `Api/Controllers/AuditActionTypesController.cs` |
-| AuditActionTypes | DELETE | `/api/audit-action-types/{id}` | Admin | Delete | `Api/Controllers/AuditActionTypesController.cs` |
-| Audits | GET | `/api/audits` | Admin | List all | `Api/Controllers/AuditsController.cs` |
-| Audits | GET | `/api/audits/{id}` | Admin | Get by ID | `Api/Controllers/AuditsController.cs` |
-| Audits | POST | `/api/audits` | Admin | Create | `Api/Controllers/AuditsController.cs` |
-| Audits | PUT | `/api/audits/{id}` | Admin | Update | `Api/Controllers/AuditsController.cs` |
-| Audits | DELETE | `/api/audits/{id}` | Admin | Delete | `Api/Controllers/AuditsController.cs` |
+| Admin Mechanics | GET | `/api/admin/mechanics` | Admin | List all mechanics (aggregate) | `Api/Controllers/AdminMechanicsController.cs` |
+| Admin Mechanics | GET | `/api/admin/mechanics/{personId}` | Admin | Mechanic detail (aggregate) | `Api/Controllers/AdminMechanicsController.cs` |
+| Admin Mechanics | GET | `/api/admin/mechanics/{personId}/workload` | Admin | Mechanic workload | `Api/Controllers/AdminMechanicsController.cs` |
+| AuditActionTypes | GET | `/api/audit-action-types` | Admin | List all (read-only) | `Api/Controllers/AuditActionTypesController.cs` |
+| AuditActionTypes | GET | `/api/audit-action-types/{id}` | Admin | Get by ID (read-only) | `Api/Controllers/AuditActionTypesController.cs` |
+| Audits | GET | `/api/audits` | Admin | List all (read-only) | `Api/Controllers/AuditsController.cs` |
+| Audits | GET | `/api/audits/{id}` | Admin | Get by ID (read-only) | `Api/Controllers/AuditsController.cs` |
 | Auth | POST | `/api/auth/register-client` | Public | Business action | `Api/Controllers/AuthController.cs` |
 | Auth | POST | `/api/auth/login` | Public | Business action | `Api/Controllers/AuthController.cs` |
 | Auth | POST | `/api/auth/refresh` | Public | Business action | `Api/Controllers/AuthController.cs` |
@@ -454,6 +451,7 @@ Total documented endpoints: **303**
 | Inventory Business | GET | `/api/inventory/low-stock` | Admin,Receptionist | List all | `Api/Controllers/InventoryBusinessController.cs` |
 | Inventory Business | POST | `/api/inventory/adjust-stock` | Admin | Adjust part stock | `Api/Controllers/InventoryBusinessController.cs` |
 | Inventory Business | GET | `/api/inventory/summary` | Admin,Receptionist | Inventory summary | `Api/Controllers/InventoryBusinessController.cs` |
+| Inventory Business | POST | `/api/inventory/purchases/{purchaseId}/cancel` | Admin | Cancel purchase (revert stock) | `Api/Controllers/InventoryBusinessController.cs` |
 | Invoice Business | POST | `/api/invoices/generate-from-service-order/{serviceOrderId}` | Admin,Receptionist | Action | `Api/Controllers/InvoiceBusinessController.cs` |
 | Invoice Business | POST | `/api/invoices/{id}/recalculate` | Admin,Receptionist | Business action | `Api/Controllers/InvoiceBusinessController.cs` |
 | Invoice Business | POST | `/api/invoices/{id}/issue` | Admin,Receptionist | Business action | `Api/Controllers/InvoiceBusinessController.cs` |
@@ -465,6 +463,7 @@ Total documented endpoints: **303**
 | InvoiceDetails | DELETE | `/api/invoice-details/{id}` | Admin,Receptionist | Delete | `Api/Controllers/InvoiceDetailsController.cs` |
 | Invoices | GET | `/api/invoices` | Admin,Receptionist | List all | `Api/Controllers/InvoicesController.cs` |
 | Invoices | GET | `/api/invoices/{id}` | Admin,Receptionist | Get by ID | `Api/Controllers/InvoicesController.cs` |
+| Invoices | GET | `/api/invoices/{invoiceId}/details` | Admin,Receptionist | Invoice line items by invoice | `Api/Controllers/InvoicesController.cs` |
 | Invoices | POST | `/api/invoices` | Admin,Receptionist | Create | `Api/Controllers/InvoicesController.cs` |
 | Invoices | PUT | `/api/invoices/{id}` | Admin,Receptionist | Update | `Api/Controllers/InvoicesController.cs` |
 | Invoices | DELETE | `/api/invoices/{id}` | Admin,Receptionist | Delete | `Api/Controllers/InvoicesController.cs` |
@@ -817,11 +816,13 @@ Returns all persons as `PersonDto[]`.
 | vehicleId | int | PK |
 | modelId | int | FK → VehicleModel |
 | vehicleTypeId | int | FK → VehicleType |
+| plate | string | Required; trim + uppercase; 5–10 chars; `^[A-Z0-9]+(?:-[A-Z0-9]+)*$`; unique among active vehicles |
 | vin | string | Exactly 17 alphanumeric characters (normalized uppercase) |
 | year | int | 1900 … current UTC year + 1 |
 | color | string? | Max 30 chars |
 | mileage | int | ≥ 0 |
 | isActive | bool | |
+| createdAt | string (ISO date-time)? | Present on list/get responses |
 
 **Create body (`CreateVehicleRequest`) / Update body (`UpdateVehicleRequest`):**
 
@@ -829,11 +830,22 @@ Returns all persons as `PersonDto[]`.
 |-------|------|----------|------------|
 | modelId | int | Yes | > 0; model must exist |
 | vehicleTypeId | int | Yes | > 0; type must exist |
+| plate | string | Yes | Trimmed; uppercase; 5–10 chars; letters, digits, optional hyphens; unique among active vehicles |
 | vin | string | Yes | Trimmed; uppercase; exactly 17 letters/digits; unique |
 | year | int | Yes | 1900 … current UTC year + 1 |
 | color | string? | No | Max 30 chars |
 | mileage | int | Yes | ≥ 0 |
 | isActive | bool | Yes | |
+
+**Plate validation (shared by vehicle CRUD and client vehicle flows):**
+
+| Rule | Value |
+|------|-------|
+| Normalization | Trim + uppercase |
+| Min length | 5 |
+| Max length | 10 |
+| Pattern | `^[A-Z0-9]+(?:-[A-Z0-9]+)*$` |
+| Uniqueness | Among **active** vehicles only |
 
 **Example create request:**
 
@@ -841,6 +853,7 @@ Returns all persons as `PersonDto[]`.
 {
   "modelId": 1,
   "vehicleTypeId": 1,
+  "plate": "ABC123",
   "vin": "1HGBH41JXMN109186",
   "year": 2020,
   "color": "Silver",
@@ -849,7 +862,7 @@ Returns all persons as `PersonDto[]`.
 }
 ```
 
-**Possible errors:** 404 NotFound; 400 validation (modelId, vehicleTypeId, vin, year, color, mileage); 404 ModelNotFound / VehicleTypeNotFound; 409 VinAlreadyExists; 409 InUse on delete when owner history or service orders reference the vehicle.
+**Possible errors:** 404 NotFound; 400 validation (modelId, vehicleTypeId, plate, vin, year, color, mileage); 404 ModelNotFound / VehicleTypeNotFound; 409 VinAlreadyExists; 409 `Vehicles.PlateAlreadyExists`; 400 `Vehicles.PlateRequired`; 400 `Vehicles.PlateInvalid`; 409 InUse on delete when owner history or service orders reference the vehicle.
 
 **Transfer ownership** (unchanged): `POST /api/vehicles/{vehicleId}/transfer-ownership` — see Client vehicles section.
 
@@ -1179,8 +1192,22 @@ All dashboard actions accept **no query parameters** (`DashboardsController`). D
 | pendingWorkReports | int | |
 | requestedPartsPendingApproval | int | |
 | activeServiceOrderIds | int[] | |
+| activeOrdersPreview | `MechanicDashboardActiveOrderDto[]` | Enriched preview rows (plate, status name, counts) |
 
-**Source DTO:** `Application/Features/Dashboards/Dtos/MechanicDashboardDto.cs`
+**`MechanicDashboardActiveOrderDto`:**
+
+| Field | Type |
+|-------|------|
+| serviceOrderId | int |
+| vehicleId | int |
+| vehiclePlate | string? |
+| orderStatusName | string? |
+| entryDate | string (ISO) |
+| estimatedDeliveryDate | string? (ISO) |
+| assignedServicesCount | int |
+| pendingWorkReportsCount | int |
+
+**Source DTO:** `Application/Features/Dashboards/Dtos/MechanicDashboardDto.cs`, `MechanicDashboardActiveOrderDto.cs`
 
 #### GET /api/receptionist/dashboard
 
@@ -1242,7 +1269,9 @@ All search endpoints require query parameter **`term`**.
 
 **Term validation:** `term` is required and must be at least **2 characters** (`SearchErrors.SearchTermRequired`, `SearchErrors.SearchTermTooShort`).
 
-**Service order search (`GET /api/search/service-orders?term=`):** Matches `serviceOrderId`, `vehicleId`, and `generalDescription` (case-insensitive substring). Response: `ServiceOrderSearchResultDto` — does **not** include client name, VIN, or vehicle model. **`term` must be at least 2 characters** (same rule as all search routes); single-digit order or vehicle IDs cannot be matched by ID alone — use description or a longer numeric substring (e.g. order `12` matches term `12`).
+**Vehicle search (`GET /api/search/vehicles?term=`):** Matches `vehicleId`, `plate`, `vin`, `color`, and string forms of `year` (case-insensitive substring). Response: `VehicleSearchResultDto` includes `plate`.
+
+**Service order search (`GET /api/search/service-orders?term=`):** Matches `serviceOrderId`, `vehicleId`, and `generalDescription` (case-insensitive substring). Response: `ServiceOrderSearchResultDto` — does **not** include client name, VIN, plate, or vehicle model. **`term` must be at least 2 characters** (same rule as all search routes); single-digit order or vehicle IDs cannot be matched by ID alone — use description or a longer numeric substring (e.g. order `12` matches term `12`).
 
 ---
 
@@ -1285,9 +1314,11 @@ All search endpoints require query parameter **`term`**.
 
 **Source:** `Api/Controllers/ReceptionistClientController.cs`
 
-**Request body:** `CreateClientWithVehicleRequest` (person fields + vehicle: modelId, vehicleTypeId, vin, year, color?, mileage)
+**Request body:** `CreateClientWithVehicleRequest` (person fields + vehicle: modelId, vehicleTypeId, **plate**, vin, year, color?, mileage)
 
-**Success (200):** `ClientWithVehicleDto`
+**Success (200):** `ClientWithVehicleDto` (includes `plate`)
+
+**Plate errors (client flows):** 400 `ClientVehicleFlows.PlateRequired`; 400 `ClientVehicleFlows.PlateInvalid`; 409 `ClientVehicleFlows.PlateAlreadyExists`
 
 ---
 
@@ -1306,6 +1337,27 @@ All search endpoints require query parameter **`term`**.
 **Source:** `Api/Controllers/ClientVehiclesController.cs`
 
 **Client invoice detail:** Clients **cannot** call `GET /api/invoices/{id}` (`InvoicesController` — Admin, Receptionist only). Use `GET /api/client/my-invoices` for list/summary fields and `GET /api/invoices/{id}/payment-summary` for payment breakdown (ownership enforced).
+
+#### POST /api/clients/{personId}/vehicles
+
+**Auth:** Admin, Receptionist  
+**Source:** `Api/Controllers/ClientVehiclesController.cs`, `Application/Features/ClientVehicleFlows/Requests/AddVehicleToClientRequest.cs`
+
+**Request body (`AddVehicleToClientRequest`):**
+
+| Field | Type | Required | Validation |
+|-------|------|----------|------------|
+| modelId | int | Yes | > 0 |
+| vehicleTypeId | int | Yes | > 0 |
+| plate | string | Yes | Same plate rules as vehicle CRUD |
+| vin | string? | No | If provided: 17 alphanumeric chars (uppercase) |
+| year | int | Yes | 1900 … current UTC year + 1 |
+| color | string? | No | Max 30 chars |
+| mileage | int | Yes | ≥ 0 |
+
+**Success (200):** `ClientVehicleDto`
+
+**Possible errors:** Same plate/VIN validation as vehicle CRUD (`ClientVehicleFlows.PlateRequired`, `PlateInvalid`, `PlateAlreadyExists`, `VinAlreadyExists`, etc.)
 
 #### POST /api/vehicles/{vehicleId}/transfer-ownership
 
@@ -1352,6 +1404,8 @@ All search endpoints require query parameter **`term`**.
 **Source:** `Api/Controllers/ServiceOrderWorkflowController.cs`  
 **Success (200):** `ServiceOrderFullDetailDto` or `ServiceOrderWorkflowDto`
 
+**`ServiceOrderFullDetailDto` vehicle fields:** Includes `vehicleId` (from `ServiceOrderDto`) and **`vehiclePlate`** (string — plate of the linked vehicle at read time; empty string if vehicle not found).
+
 ---
 
 ### Order service execution (staff)
@@ -1397,6 +1451,62 @@ All search endpoints require query parameter **`term`**.
 
 **Source:** `Application/Features/ServiceExecution/Requests/UpdateWorkPerformedRequest.cs`, `MechanicWorkflowController.cs`
 
+**`MechanicAssignedServiceDto`** (scoped to authenticated mechanic via `personId` claim):
+
+| Field | Type | Notes |
+|-------|------|-------|
+| mechanicAssignmentId | int | |
+| orderServiceId | int | |
+| serviceOrderId | int | |
+| vehicleId | int | |
+| serviceTypeId | int | |
+| orderStatusId | int | |
+| orderStatusName | string? | Prefer over catalog lookup when present |
+| vehiclePlate | string? | Prefer `ABC123 · Vehicle #3` in UI |
+| vehicleVin | string? | |
+| vehicleYear | int? | |
+| vehicleColor | string? | |
+| serviceTypeName | string? | Prefer over catalog lookup when present |
+| description | string? | |
+| workPerformed | string? | Empty when work report pending |
+| laborCost | decimal | |
+| customerApproved | bool? | |
+| approvalDate | string? (ISO) | |
+| specialtyId | int | Assignment specialty |
+| specialtyName | string? | Prefer over catalog lookup when present |
+| customerName | string? | |
+| customerDocumentNumber | string? | |
+
+**Frontend:** `/mechanic/assigned-services` and service detail use enriched names/plates when returned. Catalog lookups remain fallback only.
+
+**`MechanicActiveOrderDto`** (`GET /api/mechanic/my-active-orders`):
+
+| Field | Type |
+|-------|------|
+| serviceOrderId | int |
+| vehicleId | int |
+| orderStatusId | int |
+| orderStatusName | string? |
+| vehiclePlate | string? |
+| vehicleVin | string? |
+| vehicleYear | int? |
+| vehicleColor | string? |
+| assignedServicesCount | int |
+| pendingWorkReportsCount | int |
+| customerName | string? |
+| customerDocumentNumber | string? |
+| entryDate | string (ISO) |
+| estimatedDeliveryDate | string? (ISO) |
+| generalDescription | string? |
+
+**Source DTO:** `Application/Features/ServiceExecution/Dtos/MechanicActiveOrderDto.cs`
+
+**Frontend (Phase 6.2+):** `/mechanic/active-orders` uses enriched plate/status/customer fields when returned. Search/filter includes plate, customer, status name, and IDs. Cards link to Assigned Services for per-service detail (no `orderServiceId` on this DTO).
+
+**Frontend (Phase 6.3+):** Service detail loads assignment from `GET /api/mechanic/my-assigned-services` (match `orderServiceId`), then optionally enriches requested parts via `GET /api/service-orders/{serviceOrderId}/full-detail` (Mechanic role; assignment-scoped access). On full-detail failure, show assignment context only with a clear notice — do not call Admin-only endpoints.
+
+**Part quantity:** `PUT /api/order-service-parts/{id}/change-quantity` — Mechanic may update quantity for parts returned in full-detail.
+
 > There is **no** dedicated “work history” list endpoint for mechanics. Use assigned/active endpoints or product decision to filter client-side.
 
 ---
@@ -1409,8 +1519,11 @@ All search endpoints require query parameter **`term`**.
 | POST | `/api/invoices/{id}/recalculate` | Admin, Receptionist | Recalculate totals |
 | POST | `/api/invoices/{id}/issue` | Admin, Receptionist | Issue draft invoice |
 | POST | `/api/invoices/{id}/cancel` | Admin | Body: `{ reason }` — **reason required** (non-empty) |
+| GET | `/api/invoices/{invoiceId}/details` | Admin, Receptionist | Line items grouped by invoice — prefer over `GET /api/invoice-details` + client filter |
 
-**Source:** `Api/Controllers/InvoiceBusinessController.cs`
+**Source:** `Api/Controllers/InvoiceBusinessController.cs`, `Api/Controllers/InvoicesController.cs`
+
+**Invoice details by invoice (`InvoiceDetailsByInvoiceDto`):** `invoiceId`, `invoiceNumber`, `invoiceStatusId`, `subtotal`, `tax`, `total`, `details[]` where each line has `invoiceDetailId`, `sourcePartId?`, `concept`, `quantity`, `unitPrice`, `subtotal`, `lineType`.
 
 ---
 
@@ -1452,8 +1565,11 @@ All search endpoints require query parameter **`term`**.
 | GET | `/api/inventory/low-stock` | Admin, Receptionist |
 | POST | `/api/inventory/adjust-stock` | Admin |
 | GET | `/api/inventory/summary` | Admin, Receptionist |
+| POST | `/api/inventory/purchases/{purchaseId}/cancel` | Admin |
 
 **Source:** `Api/Controllers/InventoryBusinessController.cs`
+
+**Cancel purchase (Admin only):** Body `{ "reason": "string" }` (required). Marks purchase cancelled, reverts stock, audits as CANCEL. **409** on double cancel or mutating cancelled purchase via CRUD routes. Response: `InventoryPurchaseCancellationResultDto` (`isCancelled`, `cancelledAt`, `cancellationReason`, `cancelledByUserId`, …).
 
 **Register purchase body (`RegisterInventoryPurchaseRequest`):**
 
@@ -1526,7 +1642,7 @@ All search endpoints require query parameter **`term`**.
 | PUT | `/api/part-purchase-details/{id}` | `UpdatePartPurchaseDetailRequest` | `PartPurchaseDetailDto` |
 | DELETE | `/api/part-purchase-details/{id}` | — | 204 |
 
-**Note:** `POST /api/inventory/register-purchase` is the canonical single-transaction flow (header + lines + stock). The Admin **Register purchase** UI uses only this endpoint. CRUD routes below (`POST /api/part-purchases`, `POST /api/part-purchase-details`) remain available for other clients; purchase history in Admin uses GET/PUT/DELETE on those resources, not POST create for registration.
+**Note:** `POST /api/inventory/register-purchase` is the canonical single-transaction flow (header + lines + stock). The Admin **Register purchase** UI uses only this endpoint. Admin cancels via `POST /api/inventory/purchases/{purchaseId}/cancel` (not Receptionist). Cancelled purchases return **409** on PUT/DELETE header or detail mutations. CRUD routes below remain for non-cancelled purchases; purchase history in Admin uses GET/PUT/DELETE on those resources, not POST create for registration.
 
 `PartDto` / `PartSearchResultDto` do **not** include a separate `name` or `partName` field. Use **`description`** as the human-readable catalog label; **`code`** is the part code/SKU.
 
@@ -1651,6 +1767,26 @@ export interface PartPurchaseDto {
   supplierId: number;
   purchaseDate: string;
   total: number;
+  isCancelled?: boolean;
+  cancelledAt?: string | null;
+  cancellationReason?: string | null;
+  cancelledByUserId?: number | null;
+}
+
+export interface CancelInventoryPurchaseRequest {
+  reason: string;
+}
+
+export interface InventoryPurchaseCancellationResultDto {
+  partPurchaseId: number;
+  supplierId: number;
+  purchaseDate: string;
+  total: number;
+  isCancelled: boolean;
+  cancelledAt?: string | null;
+  cancellationReason?: string | null;
+  cancelledByUserId?: number | null;
+  message: string;
 }
 
 export interface CreatePartPurchaseRequest {
@@ -1731,6 +1867,22 @@ All accept optional query params **`from`** and **`to`** (DateTime).
 
 **Source:** `Api/Controllers/AdminAuditQueriesController.cs`  
 **Success (200):** `AuditQueryDto[]`
+
+**Read-only audit API:** `GET /api/audits`, `GET /api/audits/{id}`, `GET /api/audit-action-types`, `GET /api/audit-action-types/{id}` only. `POST`/`PUT`/`DELETE` on audits and audit-action-types were removed — do not expose create/edit/delete in Admin UI.
+
+---
+
+### Admin mechanics (aggregate)
+
+| Method | Route | Response |
+|--------|-------|----------|
+| GET | `/api/admin/mechanics` | `AdminMechanicListItemDto[]` |
+| GET | `/api/admin/mechanics/{personId}` | `AdminMechanicDetailDto` |
+| GET | `/api/admin/mechanics/{personId}/workload` | `AdminMechanicWorkloadDto` |
+
+**Auth:** Admin only. **Source:** `Api/Controllers/AdminMechanicsController.cs`, `Application/Features/AdminMechanics/`.
+
+List/detail include `personId`, `fullName`, `documentNumber`, `userId`, `email`, `isUserActive`, `roleActive`, `specialties[]`, assignment counts, and enriched workload rows (`vehiclePlate`, `serviceTypeName`, `orderStatusName`, `customerName`, …). Specialty edits remain `PUT /api/mechanics/{personId}/specialties`.
 
 ---
 
@@ -1873,16 +2025,19 @@ export interface VehicleDto {
   vehicleId: number;
   modelId: number;
   vehicleTypeId: number;
+  plate: string;
   vin: string;
   year: number;
   color?: string;
   mileage: number;
   isActive: boolean;
+  createdAt?: string;
 }
 
 export interface CreateVehicleRequest {
   modelId: number;
   vehicleTypeId: number;
+  plate: string;
   vin: string;
   year: number;
   color?: string;
@@ -1893,6 +2048,7 @@ export interface CreateVehicleRequest {
 export interface UpdateVehicleRequest {
   modelId: number;
   vehicleTypeId: number;
+  plate: string;
   vin: string;
   year: number;
   color?: string;
@@ -1976,6 +2132,7 @@ export interface ServiceOrderInvoiceSummaryDto {
 }
 
 export interface ServiceOrderFullDetailDto extends ServiceOrderDto {
+  vehiclePlate: string;
   inventory?: ServiceOrderInventorySummaryDto;
   services: ServiceOrderServiceSummaryDto[];
   invoice?: ServiceOrderInvoiceSummaryDto;
@@ -2164,7 +2321,7 @@ export type AuditQueryDto = AuditDto;
 | GET | `/api/admin/audits/by-entity` | Query: `entity` (required), `recordId` (required, &gt; 0) |
 | GET | `/api/admin/audits/by-user/{userId}` | Route `userId` must exist |
 
-**CRUD** `/api/audits` — Admin only; list/get for audit UI; create/update/delete exist but are not used in the read-only audit page.
+**Read-only** `/api/audits` and `/api/audit-action-types` — Admin list/get only; no API mutations. Admin Audit UI is read-only.
 
 ### Search results
 
@@ -2179,6 +2336,7 @@ export interface ClientSearchResultDto {
 
 export interface VehicleSearchResultDto {
   vehicleId: number;
+  plate: string;
   vin: string;
   modelId: number;
   vehicleTypeId: number;
@@ -2238,6 +2396,7 @@ export interface ClientVehicleDto {
   vehicleId: number;
   modelId: number;
   vehicleTypeId: number;
+  plate: string;
   vin: string;
   year: number;
   color?: string;
@@ -2325,6 +2484,15 @@ export interface MechanicAssignedServiceDto {
   specialtyId: number;
 }
 
+export interface MechanicActiveOrderDto {
+  serviceOrderId: number;
+  vehicleId: number;
+  orderStatusId: number;
+  entryDate: string;
+  estimatedDeliveryDate?: string;
+  generalDescription?: string;
+}
+
 export interface UpdateWorkPerformedRequest {
   workPerformed?: string;
   laborCost: number;
@@ -2390,6 +2558,17 @@ export interface CreateClientWithVehicleRequest {
   phoneNumber?: string;
   modelId: number;
   vehicleTypeId: number;
+  plate: string;
+  vin?: string;
+  year: number;
+  color?: string;
+  mileage: number;
+}
+
+export interface AddVehicleToClientRequest {
+  modelId: number;
+  vehicleTypeId: number;
+  plate: string;
   vin?: string;
   year: number;
   color?: string;
@@ -2404,6 +2583,7 @@ export interface ClientWithVehicleDto {
   fullName: string;
   primaryEmail?: string;
   primaryPhoneNumber?: string;
+  plate: string;
   vin: string;
 }
 
@@ -2681,7 +2861,8 @@ src/
 | **Assigned Services** | `GET /api/mechanic/my-assigned-services` |
 | **Active Orders** | `GET /api/mechanic/my-active-orders` |
 | **Work Report** | `PUT /api/mechanic/order-services/{id}/work-performed` |
-| **Request Parts** | `POST /api/order-services/{id}/request-part` |
+| **Request Parts** | `GET /api/search/parts?term=`, `POST /api/order-services/{id}/request-part` |
+| **Search Parts** | `GET /api/search/parts?term=` (Mechanic read-only) |
 
 ### Admin
 

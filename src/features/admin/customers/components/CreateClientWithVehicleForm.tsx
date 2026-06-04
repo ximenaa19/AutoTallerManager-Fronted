@@ -9,6 +9,11 @@ import { usePersonCatalogLookups } from '@/features/admin/customers/hooks/usePer
 import type { CreateClientWithVehicleRequest } from '@/features/admin/customers/types/customers.types';
 import { useVehicleCatalogLookups } from '@/features/admin/vehicles/hooks/useVehicleCatalogLookups';
 import {
+  normalizePlate,
+  PLATE_MAX_LENGTH,
+  validatePlate,
+} from '@/features/admin/vehicles/utils/vehiclePlate';
+import {
   isValidEmail,
   validateMaxLength,
   validatePhoneNumber,
@@ -28,6 +33,7 @@ interface ClientWithVehicleFormState {
   phoneNumber: string;
   modelId: string;
   vehicleTypeId: string;
+  plate: string;
   vin: string;
   year: string;
   color: string;
@@ -50,6 +56,7 @@ const initialForm: ClientWithVehicleFormState = {
   phoneNumber: '',
   modelId: '',
   vehicleTypeId: '',
+  plate: '',
   vin: '',
   year: String(new Date().getFullYear()),
   color: '',
@@ -73,6 +80,7 @@ function buildPayload(form: ClientWithVehicleFormState): CreateClientWithVehicle
     phoneNumber: form.phoneNumber.trim() || undefined,
     modelId: Number(form.modelId),
     vehicleTypeId: Number(form.vehicleTypeId),
+    plate: normalizePlate(form.plate),
     vin: form.vin.trim() || undefined,
     year: Number(form.year),
     color: form.color.trim() || undefined,
@@ -128,6 +136,9 @@ export function CreateClientWithVehicleForm({
     if (!form.documentTypeId) errors.documentTypeId = 'Document type is required';
     if (!form.modelId) errors.modelId = 'Vehicle model is required';
     if (!form.vehicleTypeId) errors.vehicleTypeId = 'Vehicle type is required';
+
+    const plateError = validatePlate(form.plate);
+    if (plateError) errors.plate = plateError;
 
     const year = Number(form.year);
     if (!form.year.trim() || Number.isNaN(year) || year < 1900 || year > 2100) {
@@ -329,6 +340,16 @@ export function CreateClientWithVehicleForm({
             placeholder="Select type"
             error={fieldErrors.vehicleTypeId}
             required
+          />
+          <Input
+            name="plate"
+            label="Plate"
+            required
+            value={form.plate}
+            onChange={(event) => updateField('plate', event.target.value.toUpperCase())}
+            maxLength={PLATE_MAX_LENGTH}
+            hint="5–10 characters; letters, numbers, and hyphens"
+            error={fieldErrors.plate}
           />
           <Input
             name="vin"

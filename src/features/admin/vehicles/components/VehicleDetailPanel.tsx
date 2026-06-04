@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/Badge';
+import { TemporaryPlateNotice } from '@/features/admin/vehicles/components/TemporaryPlateNotice';
 import type { VehicleDto } from '@/features/admin/vehicles/types/vehicles.types';
 import {
   formatVehicleModelLabel,
@@ -14,10 +15,16 @@ export interface VehicleDetailPanelProps {
 
 export function VehicleDetailPanel({ vehicle, lookups }: VehicleDetailPanelProps) {
   return (
-    <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <div className="space-y-4">
+      <TemporaryPlateNotice plate={vehicle.plate} />
+      <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <div>
         <dt className="text-xs uppercase tracking-wide text-text-secondary">Vehicle ID</dt>
         <dd className="mt-1 text-sm font-medium text-text-primary">#{vehicle.vehicleId}</dd>
+      </div>
+      <div>
+        <dt className="text-xs uppercase tracking-wide text-text-secondary">Plate</dt>
+        <dd className="mt-1 font-mono text-sm text-text-primary">{vehicle.plate || '—'}</dd>
       </div>
       <div>
         <dt className="text-xs uppercase tracking-wide text-text-secondary">VIN</dt>
@@ -64,5 +71,6 @@ export function VehicleDetailPanel({ vehicle, lookups }: VehicleDetailPanelProps
         </div>
       )}
     </dl>
+    </div>
   );
 }

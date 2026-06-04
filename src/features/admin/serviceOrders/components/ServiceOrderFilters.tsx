@@ -39,7 +39,7 @@ export function ServiceOrderFilters({
           <Input
             name="serviceOrderSearch"
             label="Search"
-            placeholder="Filter by order ID, vehicle, description, or status…"
+            placeholder="Filter by order ID, plate, vehicle, description, or status…"
             value={searchValue}
             onChange={(event) => onSearchChange(event.target.value)}
             className="pl-9"

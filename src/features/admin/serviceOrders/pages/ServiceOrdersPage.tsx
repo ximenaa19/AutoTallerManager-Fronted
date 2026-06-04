@@ -23,6 +23,7 @@ import {
   useVehicleCatalogLookups,
 } from '@/features/admin/vehicles/hooks/useVehicleCatalogLookups';
 import type { VehicleDto } from '@/features/admin/vehicles/types/vehicles.types';
+import { formatVehicleIdentityLabel } from '@/features/admin/vehicles/utils/vehiclePlate';
 import { useAsyncRequest } from '@/hooks/useAsyncRequest';
 import { adminServiceOrderDetailPath } from '@/routes/routePaths';
 import { formatDateTime } from '@/utils/format';
@@ -49,6 +50,7 @@ function getServiceOrderSearchText(params: {
     `#${order.serviceOrderId}`,
     String(order.vehicleId),
     `#${order.vehicleId}`,
+    vehicle?.plate,
     vehicle?.vin,
     vehicleModelLabel,
     vehicleTypeLabel,
@@ -141,10 +143,13 @@ export function ServiceOrdersPage() {
           const vehicle = vehicleById.get(order.vehicleId);
           return (
             <div className="flex flex-col">
-              <span className="text-sm text-text-primary">#{order.vehicleId}</span>
-              {vehicle?.vin && (
-                <span className="font-mono text-xs text-text-secondary">{vehicle.vin}</span>
-              )}
+              <span className="text-sm text-text-primary">
+                {formatVehicleIdentityLabel({
+                  plate: vehicle?.plate,
+                  vin: vehicle?.vin,
+                  vehicleId: order.vehicleId,
+                })}
+              </span>
             </div>
           );
         },

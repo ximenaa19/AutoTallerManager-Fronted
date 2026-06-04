@@ -10,6 +10,7 @@ import { MechanicSearchBox } from '@/features/admin/mechanics/components/Mechani
 import { MechanicSpecialtiesModal } from '@/features/admin/mechanics/components/MechanicSpecialtiesModal';
 import { MechanicsTable } from '@/features/admin/mechanics/components/MechanicsTable';
 import { MechanicWorkloadPanel } from '@/features/admin/mechanics/components/MechanicWorkloadPanel';
+import { useMechanicDetail } from '@/features/admin/mechanics/hooks/useMechanicDetail';
 import { useMechanicsData } from '@/features/admin/mechanics/hooks/useMechanicsData';
 import type { MechanicRosterItem } from '@/features/admin/mechanics/types/mechanics.types';
 import { mechanicRosterMatchesSearch } from '@/features/admin/mechanics/types/mechanics.types';
@@ -28,15 +29,16 @@ export function MechanicsPage() {
   const [modalMode, setModalMode] = useState<DetailModalMode>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  const { roster, specialtyCatalog, isLoading, error, retry } = useMechanicsData(refreshKey);
+
+  const viewPersonId = modalMode === 'view' ? selectedMechanic?.personId ?? null : null;
   const {
-    roster,
-    specialtyCatalog,
-    specialtyNameById,
-    orderServiceById,
-    isLoading,
-    error,
-    retry,
-  } = useMechanicsData(refreshKey);
+    detail,
+    workload,
+    isLoading: detailLoading,
+    error: detailError,
+    retry: retryDetail,
+  } = useMechanicDetail(viewPersonId, refreshKey);
 
   const filteredMechanics = useMemo(
     () =>
@@ -104,10 +106,9 @@ export function MechanicsPage() {
       )}
 
       <div className="rounded-lg border border-border bg-bg-elevated/40 px-4 py-3 text-sm text-text-secondary">
-        The roster is built from confirmed endpoints: person-role assignments for the Mechanic
-        role, person identity, user account status, specialty assignments, and mechanic service
-        assignments. There is no dedicated “list all mechanics” endpoint — use the table filter
-        or quick search below.
+        The roster loads from GET /api/admin/mechanics. Open a mechanic to fetch detail and
+        workload from the aggregate admin endpoints. Quick search still uses GET
+        /api/search/mechanics?term=.
       </div>
 
       <MechanicSearchBox onSelect={handleSearchSelect} />
@@ -115,7 +116,7 @@ export function MechanicsPage() {
       <AdminToolbar
         searchValue={searchTerm}
         onSearchChange={setSearchTerm}
-        searchPlaceholder="Filter loaded mechanics by name, document, specialty, or assignment count…"
+        searchPlaceholder="Filter mechanics by name, document, email, specialty, or counts…"
         summary={
           <p className="text-xs text-text-secondary">
             {filteredMechanics.length} mechanic{filteredMechanics.length === 1 ? '' : 's'} shown
@@ -147,12 +148,15 @@ export function MechanicsPage() {
           <div className="space-y-6">
             <MechanicDetailPanel
               mechanic={selectedMechanic}
+              detail={detail}
               onEditSpecialties={() => openSpecialtiesModal(selectedMechanic)}
             />
             <MechanicWorkloadPanel
-              mechanic={selectedMechanic}
-              orderServiceById={orderServiceById}
-              specialtyNameById={specialtyNameById}
+              workload={workload}
+              activeOrders={detail?.activeOrders}
+              isLoading={detailLoading}
+              error={detailError}
+              onRetry={retryDetail}
             />
           </div>
         )}

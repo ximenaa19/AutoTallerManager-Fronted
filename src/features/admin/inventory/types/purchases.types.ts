@@ -3,6 +3,10 @@ export interface PartPurchaseDto {
   supplierId: number;
   purchaseDate: string;
   total: number;
+  isCancelled?: boolean;
+  cancelledAt?: string | null;
+  cancellationReason?: string | null;
+  cancelledByUserId?: number | null;
 }
 
 export interface CreatePartPurchaseRequest {
@@ -29,4 +33,20 @@ export interface PartPurchaseDetailDto {
   quantity: number;
   unitPrice: number;
   subtotal: number;
+}
+
+export interface CancelInventoryPurchaseRequest {
+  reason: string;
+}
+
+export interface InventoryPurchaseCancellationResultDto {
+  partPurchaseId: number;
+  supplierId: number;
+  purchaseDate: string;
+  total: number;
+  isCancelled: boolean;
+  cancelledAt?: string | null;
+  cancellationReason?: string | null;
+  cancelledByUserId?: number | null;
+  message: string;
 }

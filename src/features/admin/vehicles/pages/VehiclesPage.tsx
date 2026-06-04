@@ -23,6 +23,7 @@ import {
   useVehicleCatalogLookups,
 } from '@/features/admin/vehicles/hooks/useVehicleCatalogLookups';
 import type { VehicleDto } from '@/features/admin/vehicles/types/vehicles.types';
+import { formatVehicleIdentityLabel } from '@/features/admin/vehicles/utils/vehiclePlate';
 import { useAsyncRequest } from '@/hooks/useAsyncRequest';
 import { adminVehicleDetailPath } from '@/routes/routePaths';
 import { formatDateTime, formatNumber } from '@/utils/format';
@@ -38,6 +39,7 @@ function getVehicleSearchText(vehicle: VehicleDto, lookups: ReturnType<typeof us
   return [
     String(vehicle.vehicleId),
     `#${vehicle.vehicleId}`,
+    vehicle.plate,
     vehicle.vin,
     modelLabel,
     typeLabel,
@@ -162,6 +164,13 @@ export function VehiclesPage() {
         header: 'ID',
         cell: (vehicle: VehicleDto) => (
           <span className="font-medium text-text-primary">#{vehicle.vehicleId}</span>
+        ),
+      },
+      {
+        id: 'plate',
+        header: 'Plate',
+        cell: (vehicle: VehicleDto) => (
+          <span className="font-mono text-sm">{vehicle.plate || '—'}</span>
         ),
       },
       {
@@ -293,7 +302,7 @@ export function VehiclesPage() {
       <AdminToolbar
         searchValue={searchTerm}
         onSearchChange={setSearchTerm}
-        searchPlaceholder="Filter by VIN, ID, model, type, year, or status…"
+        searchPlaceholder="Search by plate, VIN, model, type, year, or status…"
         summary={
           <p className="text-xs text-text-secondary">
             {filteredVehicles.length} vehicle{filteredVehicles.length === 1 ? '' : 's'} shown
@@ -320,7 +329,15 @@ export function VehiclesPage() {
         open={modalMode === 'view' && selectedVehicle !== null}
         onClose={closeModal}
         title={`Vehicle #${selectedVehicle?.vehicleId ?? ''}`}
-        description={selectedVehicle?.vin ? `VIN ${selectedVehicle.vin}` : undefined}
+        description={
+          selectedVehicle
+            ? formatVehicleIdentityLabel({
+                plate: selectedVehicle.plate,
+                vin: selectedVehicle.vin,
+                vehicleId: selectedVehicle.vehicleId,
+              })
+            : undefined
+        }
         size="md"
         footer={
           selectedVehicle && (
@@ -347,7 +364,7 @@ export function VehiclesPage() {
         open={modalMode === 'create' || modalMode === 'edit'}
         onClose={closeModal}
         title={modalMode === 'edit' ? `Edit vehicle #${selectedVehicle?.vehicleId ?? ''}` : 'New vehicle'}
-        description="Register a fleet record with model, type, and VIN."
+        description="Register a fleet record with plate, model, type, and VIN."
         size="lg"
       >
         <VehicleForm

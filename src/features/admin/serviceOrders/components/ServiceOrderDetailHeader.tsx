@@ -8,6 +8,7 @@ import {
   formatVehicleTypeLabel,
 } from '@/features/admin/vehicles/hooks/useVehicleCatalogLookups';
 import type { VehicleDto } from '@/features/admin/vehicles/types/vehicles.types';
+import { formatVehicleIdentityLabel } from '@/features/admin/vehicles/utils/vehiclePlate';
 import { formatDateTime } from '@/utils/format';
 
 export interface ServiceOrderDetailHeaderProps {
@@ -23,13 +24,17 @@ export function ServiceOrderDetailHeader({
   lookups,
   vehicleLookups,
 }: ServiceOrderDetailHeaderProps) {
+  const plate =
+    vehicle?.plate?.trim() || order.vehiclePlate?.trim() || undefined;
+  const vin = vehicle?.vin?.trim() || undefined;
+
   return (
     <div className="space-y-3">
     <AdminPageHeader
       title={`Service Order #${order.serviceOrderId}`}
       description={
         order.generalDescription?.trim() ||
-        `Vehicle #${order.vehicleId} · entered ${formatDateTime(order.entryDate)}`
+        `${formatVehicleIdentityLabel({ plate, vin, vehicleId: order.vehicleId })} · entered ${formatDateTime(order.entryDate)}`
       }
       actions={
         <ServiceOrderStatusBadge
@@ -39,20 +44,24 @@ export function ServiceOrderDetailHeader({
       }
     />
 
-    {vehicle ? (
+    {vehicle || plate ? (
       <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-text-secondary">
         <span>
-          <span className="text-text-muted">Vehicle:</span> #{vehicle.vehicleId} ·{' '}
-          {vehicle.vin || 'No VIN'}
+          <span className="text-text-muted">Vehicle:</span>{' '}
+          {formatVehicleIdentityLabel({ plate, vin, vehicleId: order.vehicleId })}
         </span>
-        <span>
-          <span className="text-text-muted">Model:</span>{' '}
-          {formatVehicleModelLabel(vehicle.modelId, vehicleLookups)}
-        </span>
-        <span>
-          <span className="text-text-muted">Type:</span>{' '}
-          {formatVehicleTypeLabel(vehicle.vehicleTypeId, vehicleLookups)}
-        </span>
+        {vehicle && (
+          <>
+            <span>
+              <span className="text-text-muted">Model:</span>{' '}
+              {formatVehicleModelLabel(vehicle.modelId, vehicleLookups)}
+            </span>
+            <span>
+              <span className="text-text-muted">Type:</span>{' '}
+              {formatVehicleTypeLabel(vehicle.vehicleTypeId, vehicleLookups)}
+            </span>
+          </>
+        )}
       </div>
     ) : (
       <p className="text-sm text-text-secondary">Vehicle #{order.vehicleId}</p>

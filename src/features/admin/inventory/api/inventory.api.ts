@@ -1,5 +1,9 @@
 import { httpClient } from '@/api/httpClient';
 import type {
+  CancelInventoryPurchaseRequest,
+  InventoryPurchaseCancellationResultDto,
+} from '@/features/admin/inventory/types/purchases.types';
+import type {
   AdjustStockRequest,
   InventoryAdjustmentResultDto,
   InventoryPurchaseResultDto,
@@ -27,6 +31,13 @@ export const inventoryApi = {
   registerPurchase(body: RegisterInventoryPurchaseRequest) {
     return httpClient.post<InventoryPurchaseResultDto>(
       '/api/inventory/register-purchase',
+      body,
+    );
+  },
+
+  cancelPurchase(purchaseId: number, body: CancelInventoryPurchaseRequest) {
+    return httpClient.post<InventoryPurchaseCancellationResultDto>(
+      `/api/inventory/purchases/${purchaseId}/cancel`,
       body,
     );
   },
