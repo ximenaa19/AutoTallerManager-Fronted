@@ -37,8 +37,62 @@ export const AdminDashboardPage = lazy(() =>
 );
 
 export const ReceptionistDashboardPage = lazy(() =>
-  import('@/pages/dashboards/ReceptionistDashboardPage').then((module) => ({
+  import('@/features/receptionist/pages/ReceptionistDashboardPage').then((module) => ({
     default: module.ReceptionistDashboardPage,
+  })),
+);
+
+export const ReceptionistClientsPage = lazy(() =>
+  import('@/features/receptionist/pages/ReceptionistClientsPage').then((module) => ({
+    default: module.ReceptionistClientsPage,
+  })),
+);
+
+export const ReceptionistCreateClientPage = lazy(() =>
+  import('@/features/receptionist/pages/ReceptionistCreateClientPage').then((module) => ({
+    default: module.ReceptionistCreateClientPage,
+  })),
+);
+
+export const ReceptionistVehiclesPage = lazy(() =>
+  import('@/features/receptionist/pages/ReceptionistVehiclesPage').then((module) => ({
+    default: module.ReceptionistVehiclesPage,
+  })),
+);
+
+export const ReceptionistServiceOrdersPage = lazy(() =>
+  import('@/features/receptionist/pages/ReceptionistServiceOrdersPage').then((module) => ({
+    default: module.ReceptionistServiceOrdersPage,
+  })),
+);
+
+export const ReceptionistCreateServiceOrderPage = lazy(() =>
+  import('@/features/receptionist/pages/ReceptionistCreateServiceOrderPage').then((module) => ({
+    default: module.ReceptionistCreateServiceOrderPage,
+  })),
+);
+
+export const ReceptionistInventoryPage = lazy(() =>
+  import('@/features/receptionist/pages/ReceptionistInventoryPage').then((module) => ({
+    default: module.ReceptionistInventoryPage,
+  })),
+);
+
+export const ReceptionistPurchasesPage = lazy(() =>
+  import('@/features/receptionist/pages/ReceptionistPurchasesPage').then((module) => ({
+    default: module.ReceptionistPurchasesPage,
+  })),
+);
+
+export const ReceptionistInvoicesPage = lazy(() =>
+  import('@/features/receptionist/pages/ReceptionistInvoicesPage').then((module) => ({
+    default: module.ReceptionistInvoicesPage,
+  })),
+);
+
+export const ReceptionistPaymentsPage = lazy(() =>
+  import('@/features/receptionist/pages/ReceptionistPaymentsPage').then((module) => ({
+    default: module.ReceptionistPaymentsPage,
   })),
 );
 
@@ -99,6 +153,30 @@ export const MechanicSearchPartsPage = lazy(() =>
 export const ClientDashboardPage = lazy(() =>
   import('@/pages/dashboards/ClientDashboardPage').then((module) => ({
     default: module.ClientDashboardPage,
+  })),
+);
+
+export const ClientApprovalsPage = lazy(() =>
+  import('@/features/client/pages/ClientApprovalsPage').then((module) => ({
+    default: module.ClientApprovalsPage,
+  })),
+);
+
+export const ClientVehiclesPage = lazy(() =>
+  import('@/features/client/pages/ClientVehiclesPage').then((module) => ({
+    default: module.ClientVehiclesPage,
+  })),
+);
+
+export const ClientServiceOrdersPage = lazy(() =>
+  import('@/features/client/pages/ClientServiceOrdersPage').then((module) => ({
+    default: module.ClientServiceOrdersPage,
+  })),
+);
+
+export const ClientInvoicesPage = lazy(() =>
+  import('@/features/client/pages/ClientInvoicesPage').then((module) => ({
+    default: module.ClientInvoicesPage,
   })),
 );
 

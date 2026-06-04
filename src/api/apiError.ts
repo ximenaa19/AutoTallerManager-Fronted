@@ -36,14 +36,39 @@ export async function parseApiErrorResponse(
   };
 
   try {
-    const body = (await response.json()) as Partial<ApiErrorBody>;
+    const body = (await response.json()) as Partial<ApiErrorBody> & {
+      title?: string;
+      detail?: string;
+      errors?: Record<string, string[] | string>;
+    };
+    const validationMessage = formatValidationProblemDetails(body.errors);
+
     return new ApiError(response.status, {
-      code: body.code ?? fallback.code,
-      message: body.message ?? fallback.message,
+      code: body.code ?? (body.title ? 'ValidationError' : fallback.code),
+      message: body.message ?? validationMessage ?? body.detail ?? body.title ?? fallback.message,
     });
   } catch {
     return new ApiError(response.status, fallback);
   }
+}
+
+function formatValidationProblemDetails(
+  errors?: Record<string, string[] | string>,
+): string | undefined {
+  if (!errors) {
+    return undefined;
+  }
+
+  const messages = Object.entries(errors)
+    .flatMap(([field, value]) => {
+      const fieldMessages = Array.isArray(value) ? value : [value];
+      return fieldMessages.map((message) =>
+        field ? `${field}: ${message}` : message,
+      );
+    })
+    .filter(Boolean);
+
+  return messages.length > 0 ? messages.join(' ') : undefined;
 }
 
 function getDefaultMessageForStatus(status: number): string {
